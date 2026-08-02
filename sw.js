@@ -1,4 +1,4 @@
-const CACHE_NAME = 'triptab-v11';
+const CACHE_NAME = 'triptab-v12';
 const ASSETS = [
   './',
   './dashboard.html',
@@ -21,10 +21,10 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', event => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => cache.addAll(ASSETS))
-      .then(() => self.skipWaiting())
   );
 });
 
@@ -38,30 +38,22 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   const { request } = event;
-
-  if (request.mode === 'navigate') {
-    event.respondWith(
-      fetch(request)
-        .then(networkResponse => {
-          const responseClone = networkResponse.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(request, responseClone));
-          return networkResponse;
-        })
-        .catch(() => caches.match('./dashboard.html'))
-    );
-    return;
-  }
+  if (request.method !== 'GET') return;
 
   event.respondWith(
-    caches.match(request).then(cachedResponse => {
-      if (cachedResponse) return cachedResponse;
-      return fetch(request)
-        .then(networkResponse => {
+    fetch(request)
+      .then(networkResponse => {
+        if (networkResponse && networkResponse.status === 200) {
           const responseClone = networkResponse.clone();
           caches.open(CACHE_NAME).then(cache => cache.put(request, responseClone));
-          return networkResponse;
-        })
-        .catch(() => caches.match('./dashboard.html'));
-    })
+        }
+        return networkResponse;
+      })
+      .catch(() => {
+        return caches.match(request).then(cachedResponse => {
+          if (cachedResponse) return cachedResponse;
+          if (request.mode === 'navigate') return caches.match('./dashboard.html');
+        });
+      })
   );
 });
