@@ -20,6 +20,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
   
   <script src="js/firebase-config.js"></script>
   <script src="js/i18n.js"></script>
@@ -359,6 +360,13 @@
     </div>
   </div>
 
+  <div class="modal-overlay hidden" id="photo-preview-modal" onclick="if (event.target.id === 'photo-preview-modal') closePhotoPreview();">
+    <div class="modal" style="max-width: 90vw; padding: 1rem; text-align: center;">
+      <button class="btn-icon" onclick="closePhotoPreview()" type="button" style="position:absolute; top:12px; right:12px;">✕</button>
+      <img id="photo-preview-image" src="" alt="Receipt preview" style="max-width:100%; max-height:70vh; object-fit:contain; border-radius:12px;">
+    </div>
+  </div>
+
   <script>
     const tripId = getParam('id');
     let currentTrip = null;
@@ -515,19 +523,58 @@
         const mySplit = exp.splits && exp.splits[currentUser?.uid] ? exp.splits[currentUser.uid] : 0;
         const payerData = tripMembers[exp.paidBy] || {};
         const payerName = payerData.name || payerData.displayName || payerData.email || 'Someone';
+        const photoUrls = Array.isArray(exp.photoUrls) ? exp.photoUrls : [];
 
-        item.innerHTML = `
-          <div class="flex justify-between items-center">
-            <div>
-              <div class="font-bold">${escapeHtml(exp.title)}</div>
-              <div class="text-sm text-gray-500">${escapeHtml(i18n.t('paidByLabel'))} ${escapeHtml(payerName)}</div>
-            </div>
-            <div class="text-right">
-              <div class="font-bold text-coral">RM ${escapeHtml(exp.amount.toFixed(2))}</div>
-              ${mySplit > 0 ? `<div class="text-xs text-gray-500">${escapeHtml(i18n.t('youOweLabel'))} RM ${escapeHtml(mySplit.toFixed(2))}</div>` : ''}
-            </div>
+        const content = document.createElement('div');
+        content.className = 'flex justify-between items-center';
+        content.innerHTML = `
+          <div>
+            <div class="font-bold">${escapeHtml(exp.title)}</div>
+            <div class="text-sm text-gray-500">${escapeHtml(i18n.t('paidByLabel'))} ${escapeHtml(payerName)}</div>
+          </div>
+          <div class="text-right">
+            <div class="font-bold text-coral">RM ${escapeHtml(exp.amount.toFixed(2))}</div>
+            ${mySplit > 0 ? `<div class="text-xs text-gray-500">${escapeHtml(i18n.t('youOweLabel'))} RM ${escapeHtml(mySplit.toFixed(2))}</div>` : ''}
           </div>
         `;
+        item.appendChild(content);
+
+        if (photoUrls.length) {
+          const photoStrip = document.createElement('div');
+          photoStrip.style.display = 'flex';
+          photoStrip.style.gap = '8px';
+          photoStrip.style.marginTop = '8px';
+          photoUrls.slice(0, 3).forEach((url) => {
+            const img = document.createElement('img');
+            img.src = url;
+            img.alt = 'Receipt';
+            img.style.width = '48px';
+            img.style.height = '48px';
+            img.style.objectFit = 'cover';
+            img.style.borderRadius = '8px';
+            img.style.border = '1px solid var(--border)';
+            img.onclick = (e) => {
+              e.stopPropagation();
+              openPhotoPreview(url);
+            };
+            photoStrip.appendChild(img);
+          });
+          if (photoUrls.length > 3) {
+            const more = document.createElement('div');
+            more.textContent = `+${photoUrls.length - 3}`;
+            more.style.width = '48px';
+            more.style.height = '48px';
+            more.style.display = 'flex';
+            more.style.alignItems = 'center';
+            more.style.justifyContent = 'center';
+            more.style.borderRadius = '8px';
+            more.style.background = 'var(--bg-hover)';
+            more.style.fontSize = '0.75rem';
+            more.style.color = 'var(--text-3)';
+            photoStrip.appendChild(more);
+          }
+          item.appendChild(photoStrip);
+        }
         list.appendChild(item);
       });
     }
@@ -1249,6 +1296,23 @@
     function markSettled(from, to, amount) {
       showToast('Settlement feature coming soon!');
     }
+
+    function openPhotoPreview(url) {
+      const modal = document.getElementById('photo-preview-modal');
+      const image = document.getElementById('photo-preview-image');
+      if (!modal || !image) return;
+      image.src = url;
+      modal.classList.remove('hidden');
+    }
+
+    function closePhotoPreview() {
+      const modal = document.getElementById('photo-preview-modal');
+      if (!modal) return;
+      modal.classList.add('hidden');
+    }
+
+    window.openPhotoPreview = openPhotoPreview;
+    window.closePhotoPreview = closePhotoPreview;
 
     function switchTab(tabId) {
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));

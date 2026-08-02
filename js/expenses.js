@@ -18,6 +18,18 @@ async function saveExpense(tripId, expenseData, expenseId = null) {
   }
 }
 
+async function uploadExpensePhotos(tripId, expenseId, files) {
+  if (!files || files.length === 0) return [];
+  const uploads = files.map(async (file) => {
+    const safeName = (file.name || 'receipt').replace(/[^a-zA-Z0-9._-]/g, '_');
+    const storageRef = storage.ref(`trips/${tripId}/expenses/${expenseId}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}_${safeName}`);
+    const snapshot = await storageRef.put(file);
+    return snapshot.ref.getDownloadURL();
+  });
+
+  return Promise.all(uploads);
+}
+
 async function deleteExpense(tripId, expenseId) {
   await db.collection('trips').doc(tripId).collection('expenses').doc(expenseId).delete();
 }

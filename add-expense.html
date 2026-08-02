@@ -19,6 +19,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
   
   <script src="js/firebase-config.js"></script>
   <script src="js/i18n.js"></script>
@@ -113,10 +114,45 @@
       border-color: var(--coral);
       box-shadow: 0 2px 8px rgba(255,107,107,0.25);
     }
+    .receipt-gallery {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.75rem;
+      margin-top: 0.75rem;
+    }
+    .receipt-thumb {
+      position: relative;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: var(--bg-hover);
+      aspect-ratio: 1 / 1;
+      cursor: pointer;
+    }
+    .receipt-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .receipt-empty {
+      border: 1px dashed var(--border);
+      border-radius: 12px;
+      padding: 1rem;
+      text-align: center;
+      color: var(--text-3);
+      font-size: 0.85rem;
+    }
   </style>
 </head>
 <body>
   <div class="add-expense-page">
+    <div class="modal-overlay hidden" id="photo-preview-modal" onclick="if (event.target.id === 'photo-preview-modal') closePhotoPreview();">
+      <div class="modal" style="max-width: 90vw; padding: 1rem; text-align: center;">
+        <button class="btn-icon" onclick="closePhotoPreview()" type="button" style="position:absolute; top:12px; right:12px;">✕</button>
+        <img id="photo-preview-image" src="" alt="Receipt preview" style="max-width:100%; max-height:70vh; object-fit:contain; border-radius:12px;">
+      </div>
+    </div>
     <header class="app-bar">
       <button class="icon-btn" onclick="goBack()" type="button" aria-label="Back">
         <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -190,6 +226,14 @@
         </div>
       </div>
 
+      <!-- Receipts / Photos -->
+      <div class="section-box container">
+        <div class="section-box-title">RECEIPTS / PHOTOS</div>
+        <input type="file" id="receipt-input" accept="image/*" multiple hidden>
+        <button type="button" class="btn btn-secondary btn-full" id="add-receipt-btn">Add Photos</button>
+        <div class="receipt-gallery" id="receipt-gallery"></div>
+      </div>
+
       <!-- Save button -->
       <div class="container pb-6">
         <button type="submit" class="btn btn-primary btn-full btn-lg" id="save-btn" data-i18n="saveExpense">Save Expense</button>
@@ -206,6 +250,8 @@
     let selectedCategory = 'food';
     let selectedPayer = null;
     let splitType = 'equal';
+    let selectedReceiptFiles = [];
+    let existingReceiptUrls = [];
     
     const categories = [
       { id: 'food', icon: '🍔', key: 'catFood' },
@@ -252,6 +298,8 @@
       
       document.getElementById('expense-form').addEventListener('submit', handleSave);
       document.getElementById('amount-input').addEventListener('input', renderSplitDetails);
+      document.getElementById('add-receipt-btn').addEventListener('click', () => document.getElementById('receipt-input').click());
+      document.getElementById('receipt-input').addEventListener('change', handleReceiptSelection);
     });
 
     function setupCategoryGrid() {
@@ -307,11 +355,67 @@
           setupCategoryGrid();
           
           selectedPayer = exp.paidBy;
+          existingReceiptUrls = Array.isArray(exp.photoUrls) ? exp.photoUrls : [];
+          renderReceiptGallery();
           renderPayerSelect();
           renderSplitDetails(); 
         }
       }
     }
+
+    function handleReceiptSelection(event) {
+      const files = Array.from(event.target.files || []);
+      if (!files.length) return;
+      selectedReceiptFiles = selectedReceiptFiles.concat(files);
+      renderReceiptGallery();
+      event.target.value = '';
+    }
+
+    function renderReceiptGallery() {
+      const gallery = document.getElementById('receipt-gallery');
+      if (!gallery) return;
+
+      const items = [];
+      existingReceiptUrls.forEach((url) => items.push({ type: 'existing', url }));
+      selectedReceiptFiles.forEach((file) => items.push({ type: 'new', file }));
+
+      if (!items.length) {
+        gallery.innerHTML = '<div class="receipt-empty">No photos attached yet</div>';
+        return;
+      }
+
+      gallery.innerHTML = '';
+      items.forEach((item) => {
+        const card = document.createElement('div');
+        card.className = 'receipt-thumb';
+        if (item.type === 'existing') {
+          card.innerHTML = `<img src="${item.url}" alt="Receipt preview">`;
+          card.onclick = () => openPhotoPreview(item.url);
+        } else {
+          const objectUrl = URL.createObjectURL(item.file);
+          card.innerHTML = `<img src="${objectUrl}" alt="Receipt preview">`;
+          card.onclick = () => openPhotoPreview(objectUrl);
+        }
+        gallery.appendChild(card);
+      });
+    }
+
+    function openPhotoPreview(url) {
+      const modal = document.getElementById('photo-preview-modal');
+      const image = document.getElementById('photo-preview-image');
+      if (!modal || !image) return;
+      image.src = url;
+      modal.classList.remove('hidden');
+    }
+
+    function closePhotoPreview() {
+      const modal = document.getElementById('photo-preview-modal');
+      if (!modal) return;
+      modal.classList.add('hidden');
+    }
+
+    window.openPhotoPreview = openPhotoPreview;
+    window.closePhotoPreview = closePhotoPreview;
 
     function renderPayerSelect() {
       const sel = document.getElementById('paidby-select');
@@ -403,18 +507,28 @@
         addedBy: currentUser ? currentUser.uid : selectedPayer,
         notes,
         splits,
+        photoUrls: existingReceiptUrls,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       };
 
       try {
+        let savedExpenseId = expenseId;
         if (expenseId) {
           await db.collection('trips').doc(tripId).collection('expenses').doc(expenseId).update(expenseData);
-          showToast('Expense updated');
+          savedExpenseId = expenseId;
         } else {
           expenseData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
-          await db.collection('trips').doc(tripId).collection('expenses').add(expenseData);
-          showToast('Expense added');
+          const addedDoc = await db.collection('trips').doc(tripId).collection('expenses').add(expenseData);
+          savedExpenseId = addedDoc.id;
         }
+
+        if (selectedReceiptFiles.length) {
+          const uploadedUrls = await uploadExpensePhotos(tripId, savedExpenseId, selectedReceiptFiles);
+          const mergedPhotoUrls = [...existingReceiptUrls, ...uploadedUrls];
+          await db.collection('trips').doc(tripId).collection('expenses').doc(savedExpenseId).update({ photoUrls: mergedPhotoUrls });
+        }
+
+        showToast(expenseId ? 'Expense updated' : 'Expense added');
         goBack();
       } catch (err) {
         showToast('Error saving expense');

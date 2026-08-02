@@ -18,6 +18,7 @@ firebase.initializeApp(firebaseConfig);
 // Expose globally
 const db   = firebase.firestore();
 const auth = firebase.auth();
+const storage = firebase.storage();
 
 // Convenience helper — used throughout trips.js, expenses.js, auth.js
 function nowTimestamp() {
