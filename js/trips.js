@@ -139,10 +139,16 @@ async function checkPendingInvites(email, uid, name) {
       let placeholderId = null;
 
       Object.entries(members).forEach(([mId, mData]) => {
-        if (mData && mData.isPlaceholder) {
-          const mEmail = (mData.email || '').toLowerCase().trim();
-          const mName  = (mData.name || '').toLowerCase().trim();
-          if (mEmail === cleanEmail || mName === cleanEmail || mName === emailPrefix) {
+        if (!mData) return;
+        const mEmail = (mData.email || '').toLowerCase().trim();
+        const mName  = (mData.name || '').toLowerCase().trim();
+        const isP    = mData.isPlaceholder || mId.startsWith('p_') || mId !== uid;
+
+        if (isP) {
+          if (
+            (mEmail && mEmail === cleanEmail) ||
+            (mName && (mName === cleanEmail || mName === emailPrefix))
+          ) {
             placeholderId = mId;
           }
         }
@@ -155,7 +161,8 @@ async function checkPendingInvites(email, uid, name) {
             pendingInvites: firebase.firestore.FieldValue.arrayRemove(cleanEmail)
           });
         }
-      } else if (inPendingInvites) {
+      } else {
+        // Even if no placeholder found, add user directly as a member
         await db.collection('trips').doc(tripId).update({
           [`members.${uid}`]: {
             name: name || emailPrefix,
