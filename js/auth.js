@@ -39,11 +39,29 @@ async function registerUser(name, email, password) {
 async function loginWithEmail(email, password) {
   const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
   const user = userCredential.user;
-  if (typeof checkPendingInvites === 'function' && user.email) {
+  const cleanEmail = (user.email || email).toLowerCase();
+  const displayName = user.displayName || cleanEmail.split('@')[0];
+
+  // Ensure user profile exists in Firestore (created via Firebase Console won't have one)
+  const userRef = firebase.firestore().collection('users').doc(user.uid);
+  const userDoc = await userRef.get();
+  if (!userDoc.exists) {
+    await userRef.set({
+      name: displayName,
+      email: cleanEmail,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  } else {
+    // Keep email in sync in case it changed
+    await userRef.update({ email: cleanEmail });
+  }
+
+  // Link any pending trip invites to this account
+  if (typeof checkPendingInvites === 'function') {
     try {
-      await checkPendingInvites(user.email.toLowerCase(), user.uid, user.displayName || user.email.split('@')[0]);
+      await checkPendingInvites(cleanEmail, user.uid, displayName);
     } catch (e) {
-      console.warn("Error checking pending invites:", e);
+      console.warn('Error checking pending invites:', e);
     }
   }
   return user;
@@ -60,12 +78,12 @@ async function initLoginPage() {
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const email = qs('#email').value;
+    const email    = qs('#email').value.trim();
     const password = qs('#password').value;
 
     try {
       setLoading(true);
-      await auth.signInWithEmailAndPassword(email, password);
+      await loginWithEmail(email, password);
       goTo('dashboard.html');
     } catch (error) {
       showToast(getErrorMessage(error), 'error');
