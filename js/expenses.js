@@ -20,14 +20,21 @@ async function saveExpense(tripId, expenseData, expenseId = null) {
 
 async function uploadExpensePhotos(tripId, expenseId, files) {
   if (!files || files.length === 0) return [];
-  const uploads = files.map(async (file) => {
-    const safeName = (file.name || 'receipt').replace(/[^a-zA-Z0-9._-]/g, '_');
-    const storageRef = storage.ref(`trips/${tripId}/expenses/${expenseId}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}_${safeName}`);
-    const snapshot = await storageRef.put(file);
-    return snapshot.ref.getDownloadURL();
+  const uploads = files.map(async (file, idx) => {
+    try {
+      const fileToUpload = typeof compressImage === 'function' ? await compressImage(file) : file;
+      const safeName = (file.name || 'receipt').replace(/[^a-zA-Z0-9._-]/g, '_');
+      const storageRef = storage.ref(`trips/${tripId}/expenses/${expenseId}/${Date.now()}_${idx}_${safeName}`);
+      const snapshot = await storageRef.put(fileToUpload);
+      return await snapshot.ref.getDownloadURL();
+    } catch (err) {
+      console.error('Single receipt upload error:', err);
+      return null;
+    }
   });
 
-  return Promise.all(uploads);
+  const results = await Promise.all(uploads);
+  return results.filter(url => url !== null);
 }
 
 async function deleteExpense(tripId, expenseId) {

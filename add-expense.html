@@ -262,6 +262,14 @@
       { id: 'other', icon: '📦', key: 'catOther' }
     ];
 
+    function updateSaveButtonLabel() {
+      const btn = document.getElementById('save-btn');
+      if (!btn) return;
+      const key = expenseId ? 'saveEditExpense' : 'saveExpense';
+      btn.setAttribute('data-i18n', key);
+      btn.textContent = i18n.t(key);
+    }
+
     function handleHeaderLangToggle() {
       i18n.toggle();
       setupCategoryGrid();
@@ -270,6 +278,7 @@
       if (titleEl && titleEl.getAttribute('data-i18n')) {
         titleEl.textContent = i18n.t(titleEl.getAttribute('data-i18n'));
       }
+      updateSaveButtonLabel();
     }
 
     if (!tripId) window.location.href = 'dashboard.html';
@@ -284,6 +293,7 @@
         loadForm();
       });
       i18n.init();
+      updateSaveButtonLabel();
       
       setupCategoryGrid();
       
@@ -339,8 +349,7 @@
         const titleEl = document.getElementById('page-title');
         titleEl.setAttribute('data-i18n', 'editExpense');
         titleEl.textContent = i18n.t('editExpense');
-        document.getElementById('save-btn').setAttribute('data-i18n', 'editExpense');
-        document.getElementById('save-btn').textContent = i18n.t('editExpense');
+        updateSaveButtonLabel();
         document.getElementById('delete-btn').classList.remove('hidden');
         
         const expDoc = await db.collection('trips').doc(tripId).collection('expenses').doc(expenseId).get();
@@ -371,31 +380,55 @@
       event.target.value = '';
     }
 
+    function removeExistingReceipt(index) {
+      existingReceiptUrls.splice(index, 1);
+      renderReceiptGallery();
+    }
+
+    function removeSelectedReceipt(index) {
+      selectedReceiptFiles.splice(index, 1);
+      renderReceiptGallery();
+    }
+
     function renderReceiptGallery() {
       const gallery = document.getElementById('receipt-gallery');
       if (!gallery) return;
 
-      const items = [];
-      existingReceiptUrls.forEach((url) => items.push({ type: 'existing', url }));
-      selectedReceiptFiles.forEach((file) => items.push({ type: 'new', file }));
+      gallery.innerHTML = '';
 
-      if (!items.length) {
-        gallery.innerHTML = '<div class="receipt-empty">No photos attached yet</div>';
+      if (!existingReceiptUrls.length && !selectedReceiptFiles.length) {
+        gallery.innerHTML = '<div class="receipt-empty" style="color:var(--text-3); font-size:0.85rem; padding:0.5rem 0;">No photos attached yet</div>';
         return;
       }
 
-      gallery.innerHTML = '';
-      items.forEach((item) => {
+      existingReceiptUrls.forEach((url, idx) => {
         const card = document.createElement('div');
         card.className = 'receipt-thumb';
-        if (item.type === 'existing') {
-          card.innerHTML = `<img src="${item.url}" alt="Receipt preview">`;
-          card.onclick = () => openPhotoPreview(item.url);
-        } else {
-          const objectUrl = URL.createObjectURL(item.file);
-          card.innerHTML = `<img src="${objectUrl}" alt="Receipt preview">`;
-          card.onclick = () => openPhotoPreview(objectUrl);
-        }
+        card.style.position = 'relative';
+        card.style.display = 'inline-block';
+        card.style.marginRight = '8px';
+        card.style.marginBottom = '8px';
+        card.innerHTML = `
+          <img src="${url}" alt="Receipt preview" style="width:70px; height:70px; object-fit:cover; border-radius:8px; border:1px solid var(--border); cursor:pointer;">
+          <button type="button" onclick="event.stopPropagation(); removeExistingReceipt(${idx});" style="position:absolute; top:-6px; right:-6px; background:var(--coral); color:white; border:none; border-radius:50%; width:20px; height:20px; font-size:12px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 4px rgba(0,0,0,0.2);">✕</button>
+        `;
+        card.querySelector('img').onclick = () => openPhotoPreview(url);
+        gallery.appendChild(card);
+      });
+
+      selectedReceiptFiles.forEach((file, idx) => {
+        const objectUrl = URL.createObjectURL(file);
+        const card = document.createElement('div');
+        card.className = 'receipt-thumb';
+        card.style.position = 'relative';
+        card.style.display = 'inline-block';
+        card.style.marginRight = '8px';
+        card.style.marginBottom = '8px';
+        card.innerHTML = `
+          <img src="${objectUrl}" alt="Receipt preview" style="width:70px; height:70px; object-fit:cover; border-radius:8px; border:1px solid var(--border); cursor:pointer;">
+          <button type="button" onclick="event.stopPropagation(); removeSelectedReceipt(${idx});" style="position:absolute; top:-6px; right:-6px; background:var(--coral); color:white; border:none; border-radius:50%; width:20px; height:20px; font-size:12px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 4px rgba(0,0,0,0.2);">✕</button>
+        `;
+        card.querySelector('img').onclick = () => openPhotoPreview(objectUrl);
         gallery.appendChild(card);
       });
     }
@@ -416,6 +449,8 @@
 
     window.openPhotoPreview = openPhotoPreview;
     window.closePhotoPreview = closePhotoPreview;
+    window.removeExistingReceipt = removeExistingReceipt;
+    window.removeSelectedReceipt = removeSelectedReceipt;
 
     function renderPayerSelect() {
       const sel = document.getElementById('paidby-select');
@@ -469,6 +504,9 @@
 
     async function handleSave(e) {
       e.preventDefault();
+      const saveBtn = document.getElementById('save-btn');
+      if (!saveBtn || saveBtn.disabled) return;
+
       const amount = parseFloat(document.getElementById('amount-input').value);
       if (!amount || amount <= 0) return showToast('Enter a valid amount');
       
@@ -511,6 +549,10 @@
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       };
 
+      const originalBtnText = saveBtn.textContent;
+      saveBtn.disabled = true;
+      saveBtn.textContent = selectedReceiptFiles.length ? 'Uploading photos...' : 'Saving...';
+
       try {
         let savedExpenseId = expenseId;
         if (expenseId) {
@@ -523,16 +565,30 @@
         }
 
         if (selectedReceiptFiles.length) {
-          const uploadedUrls = await uploadExpensePhotos(tripId, savedExpenseId, selectedReceiptFiles);
-          const mergedPhotoUrls = [...existingReceiptUrls, ...uploadedUrls];
-          await db.collection('trips').doc(tripId).collection('expenses').doc(savedExpenseId).update({ photoUrls: mergedPhotoUrls });
+          try {
+            const uploadedUrls = await uploadExpensePhotos(tripId, savedExpenseId, selectedReceiptFiles);
+            const mergedPhotoUrls = [...existingReceiptUrls, ...uploadedUrls];
+            await db.collection('trips').doc(tripId).collection('expenses').doc(savedExpenseId).update({ photoUrls: mergedPhotoUrls });
+          } catch (uploadErr) {
+            console.warn('Photo upload failed:', uploadErr);
+            showToast('Expense saved. Some photos could not be uploaded.');
+            goBack();
+            return;
+          }
         }
 
         showToast(expenseId ? 'Expense updated' : 'Expense added');
         goBack();
       } catch (err) {
-        showToast('Error saving expense');
-        console.error(err);
+        console.error('Error saving expense:', err);
+        saveBtn.disabled = false;
+        saveBtn.textContent = originalBtnText;
+        const message = err && err.message ? err.message : '';
+        if (message.includes('permission') || message.includes('Permission')) {
+          showToast('Saving failed due to access rules. Please contact the trip admin.');
+        } else {
+          showToast('Error saving expense: ' + (message || 'Please try again.'));
+        }
       }
     }
 
