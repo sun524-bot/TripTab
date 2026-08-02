@@ -21,16 +21,31 @@ async function saveExpense(tripId, expenseData, expenseId = null) {
 async function uploadExpensePhotos(tripId, expenseId, files) {
   if (!files || files.length === 0) return [];
   const uploads = files.map(async (file, idx) => {
+    // 1. Try Firebase Storage first
     try {
-      const fileToUpload = typeof compressImage === 'function' ? await compressImage(file) : file;
-      const safeName = (file.name || 'receipt').replace(/[^a-zA-Z0-9._-]/g, '_');
-      const storageRef = storage.ref(`trips/${tripId}/expenses/${expenseId}/${Date.now()}_${idx}_${safeName}`);
-      const snapshot = await storageRef.put(fileToUpload);
-      return await snapshot.ref.getDownloadURL();
+      if (typeof storage !== 'undefined' && storage && storage.ref) {
+        const fileToUpload = typeof compressImage === 'function' ? await compressImage(file) : file;
+        const safeName = (file.name || 'receipt').replace(/[^a-zA-Z0-9._-]/g, '_');
+        const storageRef = storage.ref(`trips/${tripId}/expenses/${expenseId}/${Date.now()}_${idx}_${safeName}`);
+        const snapshot = await storageRef.put(fileToUpload);
+        const downloadUrl = await snapshot.ref.getDownloadURL();
+        if (downloadUrl) return downloadUrl;
+      }
     } catch (err) {
-      console.error('Single receipt upload error:', err);
-      return null;
+      console.warn('Firebase Storage upload failed, using Data URL fallback:', err);
     }
+
+    // 2. Fallback to compact Data URL if Storage fails or is unconfigured
+    try {
+      if (typeof fileToDataUrl === 'function') {
+        const dataUrl = await fileToDataUrl(file, 800, 800, 0.6);
+        if (dataUrl) return dataUrl;
+      }
+    } catch (fallbackErr) {
+      console.error('Data URL fallback failed:', fallbackErr);
+    }
+
+    return null;
   });
 
   const results = await Promise.all(uploads);
