@@ -107,6 +107,24 @@ If you clone or fork this repository to host your own instance of TripTab:
 
 ---
 
+## 👤 Creating Your First User Account
+
+> **Important**: Public registration is disabled by default to keep the app private. You must create your first account manually via the Firebase Console.
+
+**Step-by-step:**
+
+1. Go to your Firebase project at [console.firebase.google.com](https://console.firebase.google.com/)
+2. Navigate to **Build → Authentication → Users**
+3. Click **"Add user"**
+4. Enter an **Email** and **Password**
+5. Click **"Add user"** to confirm
+6. Open your app and sign in with those credentials — you're in! 🎉
+
+> **To invite others**: Repeat the same steps above for each person you want to give access to. They can then log in using the email and password you set for them, and update their password from the Profile page inside the app.
+
+---
+
 ## 📝 License
 
 Distributed under the MIT License. See `LICENSE` for more information.
+
