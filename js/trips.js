@@ -149,10 +149,16 @@ async function checkPendingInvites(email, uid, name) {
         if (isPlaceholder) {
           const mEmail = (mData.email || '').toLowerCase().trim();
           const mName  = (mData.name || '').toLowerCase().trim();
+          
           if (mEmail && mEmail === cleanEmail) {
             placeholderId = mId;
-          } else if (mName && (mName === cleanEmail || mName === emailPrefix)) {
-            placeholderId = mId;
+          } else if (mName) {
+            const isNameExact = mName === cleanEmail || mName === emailPrefix;
+            const isNameSub   = (emailPrefix.length >= 3 && mName.includes(emailPrefix)) || 
+                                (mName.length >= 3 && emailPrefix.includes(mName));
+            if (isNameExact || isNameSub) {
+              placeholderId = mId;
+            }
           }
         }
       });
