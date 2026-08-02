@@ -385,3 +385,12 @@ function fileToDataUrl(file, maxWidth = 600, maxHeight = 600, quality = 0.5) {
     reader.readAsDataURL(file);
   });
 }
+
+function formatPhotoUrl(url) {
+  if (!url) return '';
+  const str = String(url).trim();
+  if (str.startsWith('http://') || str.startsWith('https://') || str.startsWith('data:') || str.startsWith('blob:')) {
+    return str;
+  }
+  return `data:image/jpeg;base64,${str}`;
+}

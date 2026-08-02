@@ -401,7 +401,8 @@
         return;
       }
 
-      existingReceiptUrls.forEach((url, idx) => {
+      existingReceiptUrls.forEach((rawUrl, idx) => {
+        const src = typeof formatPhotoUrl === 'function' ? formatPhotoUrl(rawUrl) : rawUrl;
         const card = document.createElement('div');
         card.className = 'receipt-thumb';
         card.style.position = 'relative';
@@ -409,10 +410,10 @@
         card.style.marginRight = '8px';
         card.style.marginBottom = '8px';
         card.innerHTML = `
-          <img src="${url}" alt="Receipt preview" style="width:70px; height:70px; object-fit:cover; border-radius:8px; border:1px solid var(--border); cursor:pointer;">
+          <img src="${src}" alt="Receipt preview" style="width:70px; height:70px; object-fit:cover; border-radius:8px; border:1px solid var(--border); cursor:pointer;">
           <button type="button" onclick="event.stopPropagation(); removeExistingReceipt(${idx});" style="position:absolute; top:-6px; right:-6px; background:var(--coral); color:white; border:none; border-radius:50%; width:20px; height:20px; font-size:12px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 4px rgba(0,0,0,0.2);">✕</button>
         `;
-        card.querySelector('img').onclick = () => openPhotoPreview(url);
+        card.querySelector('img').onclick = () => openPhotoPreview(src);
         gallery.appendChild(card);
       });
 
@@ -433,11 +434,12 @@
       });
     }
 
-    function openPhotoPreview(url) {
+    function openPhotoPreview(rawUrl) {
       const modal = document.getElementById('photo-preview-modal');
       const image = document.getElementById('photo-preview-image');
-      if (!modal || !image) return;
-      image.src = url;
+      if (!modal || !image || !rawUrl) return;
+      const formattedUrl = typeof formatPhotoUrl === 'function' ? formatPhotoUrl(rawUrl) : rawUrl;
+      image.src = formattedUrl;
       modal.classList.remove('hidden');
       document.body.style.overflow = 'hidden';
     }

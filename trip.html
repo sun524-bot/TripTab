@@ -544,18 +544,20 @@
           photoStrip.style.display = 'flex';
           photoStrip.style.gap = '8px';
           photoStrip.style.marginTop = '8px';
-          photoUrls.slice(0, 3).forEach((url) => {
+          photoUrls.slice(0, 3).forEach((rawUrl) => {
+            const src = typeof formatPhotoUrl === 'function' ? formatPhotoUrl(rawUrl) : rawUrl;
             const img = document.createElement('img');
-            img.src = url;
+            img.src = src;
             img.alt = 'Receipt';
             img.style.width = '48px';
             img.style.height = '48px';
             img.style.objectFit = 'cover';
             img.style.borderRadius = '8px';
             img.style.border = '1px solid var(--border)';
+            img.style.cursor = 'pointer';
             img.onclick = (e) => {
               e.stopPropagation();
-              openPhotoPreview(url);
+              openPhotoPreview(src);
             };
             photoStrip.appendChild(img);
           });
@@ -1297,11 +1299,12 @@
       showToast('Settlement feature coming soon!');
     }
 
-    function openPhotoPreview(url) {
+    function openPhotoPreview(rawUrl) {
       const modal = document.getElementById('photo-preview-modal');
       const image = document.getElementById('photo-preview-image');
-      if (!modal || !image) return;
-      image.src = url;
+      if (!modal || !image || !rawUrl) return;
+      const formattedUrl = typeof formatPhotoUrl === 'function' ? formatPhotoUrl(rawUrl) : rawUrl;
+      image.src = formattedUrl;
       modal.classList.remove('hidden');
       document.body.style.overflow = 'hidden';
     }
