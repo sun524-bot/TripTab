@@ -592,12 +592,21 @@
   gap: var(--sp-3);
   transition: background .3s ease;
 }
+/* Gradient variant — used in trip.html to seamlessly connect app-bar with hero */
+.app-bar.gradient-bar {
+  background: var(--gradient) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-bottom: none !important;
+}
 .app-bar-title {
   flex: 1;
   font-size: var(--text-lg);
   font-weight: var(--weight-bold);
   color: var(--text-1);
 }
+.app-bar.gradient-bar .app-bar-title { color: #fff !important; }
+.app-bar.gradient-bar .btn-icon { color: #fff !important; }
 .app-bar-actions {
   display: flex;
   align-items: center;
@@ -619,8 +628,24 @@
   border-top: 1px solid var(--border);
   display: flex;
   align-items: center;
+  justify-content: center;
   z-index: var(--z-nav);
   padding: 0 var(--sp-2);
+}
+@media (min-width: 768px) {
+  .bottom-nav {
+    max-width: 880px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: var(--r-xl) var(--r-xl) 0 0;
+    border-left: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+  }
+}
+@media (min-width: 1024px) {
+  .bottom-nav {
+    max-width: 1040px;
+  }
 }
 .nav-item {
   flex: 1;
@@ -683,17 +708,30 @@
   justify-content: center;
   animation: fadeIn .2s ease;
 }
-.modal-overlay.center { align-items: center; }
+@media (min-width: 768px) {
+  .modal-overlay {
+    align-items: center;
+    padding: var(--sp-6);
+  }
+}
 
 .modal {
   background: var(--bg-card);
   border-radius: var(--r-xl) var(--r-xl) 0 0;
   padding: var(--sp-6) var(--sp-5) calc(var(--sp-6) + env(safe-area-inset-bottom));
   width: 100%;
-  max-width: 500px;
+  max-width: 580px;
   max-height: 90dvh;
   overflow-y: auto;
   animation: fadeInUp .25s ease;
+}
+@media (min-width: 768px) {
+  .modal {
+    border-radius: var(--r-xl);
+    max-height: 85dvh;
+    box-shadow: var(--shadow-xl);
+    border: 1px solid var(--border);
+  }
 }
 .modal.center-modal {
   border-radius: var(--r-xl);
@@ -1058,3 +1096,33 @@
 .trip-stat { flex: 1; text-align: center; }
 .trip-stat-value { font-size: var(--text-xl); font-weight: var(--weight-bold); color: #FFF; }
 .trip-stat-label { font-size: var(--text-xs); color: rgba(255,255,255,.75); }
+
+/* ----------------------------------------------------------------
+   SWITCH TOGGLE COMPONENT
+---------------------------------------------------------------- */
+.switch-toggle input:checked + .toggle-slider {
+  background-color: var(--coral);
+}
+.switch-toggle input:checked + .toggle-slider:before {
+  transform: translateX(20px);
+}
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: var(--border);
+  transition: .3s;
+  border-radius: 24px;
+}
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .3s;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}

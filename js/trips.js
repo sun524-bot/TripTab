@@ -125,22 +125,125 @@ async function checkPendingInvites(email, uid, name) {
 
   if (tripsSnap.empty) return;
 
-  const batch = db.batch();
-  tripsSnap.forEach(doc => {
-    const tripRef = doc.ref;
-    batch.update(tripRef, {
-      [`members.${uid}`]: {
-        name: name || cleanEmail.split('@')[0],
-        email: cleanEmail,
-        role: 'member',
-        joinedAt: nowTimestamp()
-      },
-      memberUids: firebase.firestore.FieldValue.arrayUnion(uid),
-      pendingInvites: firebase.firestore.FieldValue.arrayRemove(cleanEmail)
+  for (const doc of tripsSnap.docs) {
+    const tripId = doc.id;
+    const tripData = doc.data();
+    const members = tripData.members || {};
+
+    // Check if there is a placeholder member with this email
+    let placeholderId = null;
+    Object.entries(members).forEach(([mId, mData]) => {
+      if (mData.isPlaceholder && mData.email && mData.email.toLowerCase().trim() === cleanEmail) {
+        placeholderId = mId;
+      }
     });
+
+    if (placeholderId) {
+      await linkPlaceholderMember(tripId, placeholderId, uid, cleanEmail, name);
+      await db.collection('trips').doc(tripId).update({
+        pendingInvites: firebase.firestore.FieldValue.arrayRemove(cleanEmail)
+      });
+    } else {
+      await db.collection('trips').doc(tripId).update({
+        [`members.${uid}`]: {
+          name: name || cleanEmail.split('@')[0],
+          email: cleanEmail,
+          role: 'member',
+          joinedAt: nowTimestamp()
+        },
+        memberUids: firebase.firestore.FieldValue.arrayUnion(uid),
+        pendingInvites: firebase.firestore.FieldValue.arrayRemove(cleanEmail)
+      });
+    }
+  }
+}
+
+async function addPlaceholderMember(tripId, name, email = '') {
+  const tripRef = db.collection('trips').doc(tripId);
+  const placeholderId = 'p_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+  const cleanEmail = email ? email.toLowerCase().trim() : '';
+
+  const memberData = {
+    name: name.trim(),
+    email: cleanEmail,
+    role: 'member',
+    isPlaceholder: true,
+    joinedAt: nowTimestamp()
+  };
+
+  const updateData = {
+    [`members.${placeholderId}`]: memberData
+  };
+
+  if (cleanEmail) {
+    updateData.pendingInvites = firebase.firestore.FieldValue.arrayUnion(cleanEmail);
+  }
+
+  await tripRef.update(updateData);
+  return placeholderId;
+}
+
+async function linkPlaceholderMember(tripId, placeholderId, realUid, realEmail, realName) {
+  const tripRef = db.collection('trips').doc(tripId);
+  const tripDoc = await tripRef.get();
+  if (!tripDoc.exists) return;
+  const tripData = tripDoc.data();
+  const existingMember = (tripData.members && tripData.members[placeholderId]) || {};
+
+  const name = realName || existingMember.name || 'Member';
+  const email = realEmail || existingMember.email || '';
+
+  // Batch update member map and replace placeholder in expenses
+  const batch = db.batch();
+  batch.update(tripRef, {
+    [`members.${realUid}`]: {
+      name: name,
+      email: email,
+      role: existingMember.role || 'member',
+      joinedAt: existingMember.joinedAt || nowTimestamp()
+    },
+    [`members.${placeholderId}`]: firebase.firestore.FieldValue.delete(),
+    memberUids: firebase.firestore.FieldValue.arrayUnion(realUid)
   });
-  
+
+  // Re-link expenses where paidBy or splits referenced placeholderId
+  const expensesSnap = await tripRef.collection('expenses').get();
+  expensesSnap.forEach(doc => {
+    const expData = doc.data();
+    let updated = false;
+    const expUpdates = {};
+
+    if (expData.paidBy === placeholderId) {
+      expUpdates.paidBy = realUid;
+      updated = true;
+    }
+
+    if (expData.splits && expData.splits[placeholderId] !== undefined) {
+      const newSplits = { ...expData.splits };
+      newSplits[realUid] = newSplits[placeholderId];
+      delete newSplits[placeholderId];
+      expUpdates.splits = newSplits;
+      updated = true;
+    }
+
+    if (updated) {
+      batch.update(doc.ref, expUpdates);
+    }
+  });
+
   await batch.commit();
+}
+
+async function updateTripDetails(tripId, { name, description, startDate, endDate, currency }) {
+  const updates = {};
+  if (name !== undefined) updates.name = name;
+  if (description !== undefined) updates.description = description;
+  if (startDate !== undefined) updates.startDate = startDate;
+  if (endDate !== undefined) updates.endDate = endDate;
+  if (currency !== undefined) updates.currency = currency;
+  updates.updatedAt = nowTimestamp();
+
+  await db.collection('trips').doc(tripId).update(updates);
 }
 
 function listenTripExpenses(tripId, callback) {
@@ -162,3 +265,4 @@ async function getTripMembers(tripId) {
   }
   return {};
 }
+

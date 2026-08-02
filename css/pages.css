@@ -59,7 +59,7 @@
 @media (min-width: 640px) {
   .trips-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: var(--sp-4);
   }
 }
@@ -92,10 +92,14 @@
   display: flex;
   flex-direction: column;
   min-height: 100dvh;
+  padding-bottom: 120px !important;
+}
+.page-body {
+  padding-bottom: 120px !important;
 }
 .trip-content {
   flex: 1;
-  padding-bottom: 80px;
+  padding-bottom: 120px !important;
 }
 .trip-tabs-sticky {
   position: sticky;
@@ -104,15 +108,26 @@
   background: var(--bg);
   border-bottom: 1px solid var(--border);
 }
-.tab-panel { display: none; }
-.tab-panel.active { display: block; }
+.tab-panel { display: block; padding-bottom: 120px !important; }
+.tab-panel.hidden { display: none !important; }
+.tab-panel.active { display: block !important; }
 
 /* Expense list */
 .expense-list {
   display: flex;
   flex-direction: column;
   gap: var(--sp-2);
-  padding: var(--sp-4);
+  padding: var(--sp-4) 0;
+}
+@media (min-width: 768px) {
+  .expense-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: var(--sp-3);
+  }
+  .expense-date-header {
+    grid-column: 1 / -1;
+  }
 }
 .expense-date-group { }
 .expense-date-label {
@@ -129,7 +144,14 @@
   display: flex;
   flex-direction: column;
   gap: var(--sp-2);
-  padding: var(--sp-4);
+  padding: var(--sp-3) 0;
+}
+@media (min-width: 640px) {
+  .members-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--sp-3);
+  }
 }
 .invite-section {
   margin-top: var(--sp-4);

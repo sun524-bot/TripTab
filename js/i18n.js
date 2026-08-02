@@ -165,6 +165,88 @@ const TRANSLATIONS = {
     errUnknown: 'Something went wrong. Please try again.',
     errNoMembers: 'Add at least one member.',
 
+    // Trip UI strings
+    noExpensesYet: 'No expenses yet',
+    tapToAddExpense: 'Tap + to add the first expense',
+    tripMembers: 'Trip Members',
+    manageMembersHint: 'Manage members & invitations',
+    calculating: 'Calculating...',
+    simplifyDebts: 'Simplify Debts',
+    directPairwiseText: 'Direct pairwise payments (exact expense splits)',
+    minimizeTransactionsText: 'Minimize group transactions across all members',
+    shareTripLink: 'Share Trip Link',
+    allowFriendsJoin: 'Allow friends to quickly view or join this trip',
+    copyLink: 'Copy Link',
+    assignNameTab: 'Assign Name',
+    inviteEmailTab: 'Invite Email',
+    memberNameLabel: 'Member Name',
+    memberNamePlaceholder: 'e.g. Bob, Charlie',
+    memberNameHint: 'Log expenses under this name even before they sign up.',
+    emailOptionalLabel: 'Email (Optional)',
+    addMemberBtn: 'Add Member',
+    sendInvitationBtn: 'Send Invitation',
+    copyTripInviteLinkBtn: 'Copy Trip Invite Link',
+    addMemberTitle: 'Add Trip Member',
+    addMemberOrVirtualName: '+ Add Member or Virtual Name',
+    clickHereAssignName: 'Click here to assign a name or invite via email',
+
+    // Expense item rendering
+    paidByLabel: 'Paid by',
+    youOweLabel: 'You owe',
+    totalLabel: 'Total',
+    dateLabel: 'Date',
+    detailsLabel: '🔍 Details',
+    noMembersYet: 'No members yet',
+    tapAddMember: 'Tap + Add Member to add people to this trip.',
+    unregisteredMember: 'Unregistered Member',
+    youSuffix: '(You)',
+    virtualBadge: 'Virtual',
+
+    // Settle tab rendering
+    paysLabel: 'pays',
+    directPaymentsNeeded: 'direct payment(s) needed',
+    paymentsNeeded: 'payment(s) needed',
+    directPairwiseDebts: 'Direct pairwise debts (exact expense splits)',
+    noPaymentsNeeded: 'No direct payments needed.',
+    noPaymentsNeededSimple: 'No payments needed.',
+    clickViewBreakdown: 'Click to view calculation breakdown',
+
+    // Calculation modal
+    calcBreakdownTitle: 'Calculation Breakdown',
+    calcBreakdownSubtitle: 'Detailed payment breakdown between members',
+    calcPaidFor: 'paid for',
+    calcDeduct: 'Deduct',
+    calcPaidForLabel: 'paid for',
+    calcDirectPairwiseBalance: 'Direct Pairwise Balance:',
+    calcGroupDebtSimplification: 'Group Debt Simplification:',
+    calcAdjustedNote: '⚡ Adjusted to minimize group transactions across all members.',
+    calcFinalPayment: 'Final Payment Needed:',
+    calcNetPayment: 'Net Payment Needed:',
+    calcIndirectTransfer: 'Indirect Settlement Transfer:',
+    calcIndirectTransferDesc: 'is paying',
+    calcIndirectTransferDesc2: 'to simplify overall group balances on behalf of other trip members.',
+    calcPaidBySection: 'paid for',
+    calcDeductSection: 'Deducted: Paid by',
+    calcShareLabel: 's share',
+    calcNoDirectExpenses: 'No direct expenses paid by',
+    calcNoDirectExpenses2: 'for',
+    removeMemberTitle: 'Remove Member',
+    createTripBtn: '+ Create',
+    activeTripsCount: '{count} active trip(s)',
+    splitEquallyAmongText: 'Split equally among all {count} members — {currency} {perPerson} per person',
+    inviteMembersHint: 'Comma-separated. Enter names for virtual members or emails to invite.',
+    tripNamePlaceholder: 'e.g. Bali Summer 2024',
+    optionalPlaceholder: 'Optional notes or details...',
+    invitePlaceholder: 'e.g. Bob, Alice, friend@example.com',
+    createTripAction: 'Create Trip',
+    regClosedNotice: '🔒 Public registration is closed. Please contact admin for an account.',
+
+    // Trip menu options
+    shareTripInviteLink: 'Share Trip Invite Link',
+    editTripDetails: 'Edit Trip Details',
+    printSavePDF: 'Print / Save PDF Summary',
+    tripOptions: 'Trip Options',
+
     // Success
     okTripCreated: 'Trip created!',
     okExpenseSaved: 'Expense saved!',
@@ -336,6 +418,88 @@ const TRANSLATIONS = {
     errUnknown: '出错了，请重试。',
     errNoMembers: '至少需要添加一名成员。',
 
+    // Trip UI strings
+    noExpensesYet: '暂无费用',
+    tapToAddExpense: '点击 + 添加第一笔费用',
+    tripMembers: '行程成员',
+    manageMembersHint: '管理成员和邀请',
+    calculating: '计算中...',
+    simplifyDebts: '简化债务',
+    directPairwiseText: '点对点直接付款（精确费用分摊）',
+    minimizeTransactionsText: '最小化群组间转账次数',
+    shareTripLink: '分享行程链接',
+    allowFriendsJoin: '允许朋友快速查看或加入此行程',
+    copyLink: '复制链接',
+    assignNameTab: '指定名称',
+    inviteEmailTab: '邮箱邀请',
+    memberNameLabel: '成员姓名',
+    memberNamePlaceholder: '例如 小明、小红',
+    memberNameHint: '即使对方未注册，也可以用此名字记录费用。',
+    emailOptionalLabel: '电子邮箱（选填）',
+    addMemberBtn: '添加成员',
+    sendInvitationBtn: '发送邀请',
+    copyTripInviteLinkBtn: '复制行程邀请链接',
+    addMemberTitle: '添加行程成员',
+    addMemberOrVirtualName: '+ 添加成员或虚拟名称',
+    clickHereAssignName: '点击此处指定名称或通过邮箱邀请',
+
+    // Expense item rendering
+    paidByLabel: '付款人',
+    youOweLabel: '你应付',
+    totalLabel: '总计',
+    dateLabel: '日期',
+    detailsLabel: '🔍 详情',
+    noMembersYet: '暂无成员',
+    tapAddMember: '点击 + 添加成员，将人员加入此行程。',
+    unregisteredMember: '未注册成员',
+    youSuffix: '（我）',
+    virtualBadge: '虚拟',
+
+    // Settle tab rendering
+    paysLabel: '付给',
+    directPaymentsNeeded: '笔直接付款',
+    paymentsNeeded: '笔付款',
+    directPairwiseDebts: '点对点直接债务（精确费用分摊）',
+    noPaymentsNeeded: '无需直接付款。',
+    noPaymentsNeededSimple: '无需付款。',
+    clickViewBreakdown: '点击查看计算明细',
+
+    // Calculation modal
+    calcBreakdownTitle: '计算明细',
+    calcBreakdownSubtitle: '成员间详细付款分析',
+    calcPaidFor: '为',
+    calcDeduct: '扣除',
+    calcPaidForLabel: '支付的费用',
+    calcDirectPairwiseBalance: '点对点净余额：',
+    calcGroupDebtSimplification: '群组债务简化：',
+    calcAdjustedNote: '⚡ 已调整以最小化所有成员的群组转账次数。',
+    calcFinalPayment: '最终应付金额：',
+    calcNetPayment: '净应付金额：',
+    calcIndirectTransfer: '间接结算转移：',
+    calcIndirectTransferDesc: '正在付给',
+    calcIndirectTransferDesc2: '以代表其他行程成员简化整体群组余额。',
+    calcPaidBySection: '为',
+    calcDeductSection: '扣除：由',
+    calcShareLabel: '应分担',
+    calcNoDirectExpenses: '无由',
+    calcNoDirectExpenses2: '为',
+    removeMemberTitle: '移除成员',
+    createTripBtn: '+ 新建',
+    activeTripsCount: '{count} 个进行中的行程',
+    splitEquallyAmongText: '在所有 {count} 位成员间平均分摊 — 每人 {currency} {perPerson}',
+    inviteMembersHint: '以逗号分隔。输入名称以指定虚拟成员，或输入邮箱发送邀请。',
+    tripNamePlaceholder: '例如：2026 巴厘岛夏日之旅',
+    optionalPlaceholder: '选填备注或说明...',
+    invitePlaceholder: '例如：小明、小红、friend@example.com',
+    createTripAction: '创建行程',
+    regClosedNotice: '🔒 公开注册已关闭。如需账号请联系管理员。',
+
+    // Trip menu options
+    shareTripInviteLink: '分享行程邀请链接',
+    editTripDetails: '编辑行程详情',
+    printSavePDF: '打印 / 保存 PDF 摘要',
+    tripOptions: '行程选项',
+
     // Success
     okTripCreated: '行程已创建！',
     okExpenseSaved: '费用已保存！',
@@ -361,11 +525,17 @@ const i18n = {
     this.applyAll();
   },
 
-  /** Get a translation string */
-  t(key) {
-    return TRANSLATIONS[this._lang]?.[key]
-        ?? TRANSLATIONS['en'][key]
+  /** Get a translation string with optional parameter replacement */
+  t(key, params) {
+    let str = TRANSLATIONS[this._lang]?.[key]
+        ?? TRANSLATIONS['en']?.[key]
         ?? key;
+    if (params && typeof params === 'object') {
+      Object.keys(params).forEach(k => {
+        str = str.replace(new RegExp(`\\{${k}\\}`, 'g'), params[k]);
+      });
+    }
+    return str;
   },
 
   /** Apply translations to all [data-i18n] elements in DOM */

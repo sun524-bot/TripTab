@@ -39,33 +39,14 @@
             <p data-i18n="registerTagline">Join the easiest way to split travel costs</p>
         </div>
     </div>
-    <div class="auth-card">
+    <div class="auth-card" style="text-align: center;">
         <h2 data-i18n="registerTitle">Create Account</h2>
-        <div id="error-message" class="error-text hidden"></div>
-        <form id="register-form">
-            <div class="form-group">
-                <label for="name" data-i18n="nameLabel">Full Name</label>
-                <input type="text" id="name" class="form-input" required>
-            </div>
-            <div class="form-group">
-                <label for="email" data-i18n="emailLabel">Email</label>
-                <input type="email" id="email" class="form-input" required>
-            </div>
-            <div class="form-group">
-                <label for="password" data-i18n="passwordLabel">Password</label>
-                <input type="password" id="password" class="form-input" required minlength="6">
-            </div>
-            <div class="form-group">
-                <label for="confirm-password" data-i18n="confirmPasswordLabel">Confirm Password</label>
-                <input type="password" id="confirm-password" class="form-input" required minlength="6">
-            </div>
-            <button type="submit" class="btn btn-primary btn-full mt-4" id="submit-btn">
-                <span data-i18n="registerBtn">Sign Up</span>
-            </button>
-        </form>
-        <div class="auth-footer">
-            <span data-i18n="alreadyAccount">Already have an account?</span>
-            <a href="login.html" data-i18n="loginLink">Sign in</a>
+        <div class="card p-4 my-4" style="background: var(--bg-hover); border-radius: 12px; border: 1px dashed var(--border);">
+            <div style="font-size: 2rem; margin-bottom: 8px;">🔒</div>
+            <div style="font-weight: 700; font-size: 1rem; color: var(--text-1);" data-i18n="regClosedNotice">Public registration is closed.</div>
+        </div>
+        <div class="auth-footer mt-4">
+            <a href="login.html" class="btn btn-primary btn-full" data-i18n="signInBtn">Back to Sign In</a>
         </div>
     </div>
 

@@ -4,7 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>TripTab - Add Expense</title>
-  
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#FF6B6B">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="TripTab">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23FF6B6B'/><text x='50' y='65' font-size='50' text-anchor='middle'>✈️</text></svg>">
   <script src="js/theme.js"></script>
   
   <link rel="stylesheet" href="css/base.css">
@@ -22,7 +27,7 @@
   <script src="js/expenses.js"></script>
   <style>
     .amount-hero {
-      background: linear-gradient(135deg, var(--coral), var(--gold));
+      background: var(--gradient);
       color: white;
       padding: 3rem 1rem;
       text-align: center;
@@ -82,25 +87,31 @@
     }
     .split-selector {
       display: flex;
-      background: var(--bg-body);
+      background: var(--bg-hover);
+      border: 1px solid var(--border);
       border-radius: 8px;
       padding: 0.25rem;
       margin-bottom: 1rem;
     }
     .split-btn {
       flex: 1;
-      padding: 0.5rem;
+      padding: 0.6rem 0.5rem;
       text-align: center;
       background: transparent;
-      border: none;
+      border: 1px solid transparent;
       border-radius: 6px;
       font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-2);
       cursor: pointer;
+      transition: all 0.2s ease;
     }
     .split-btn.active {
       background: var(--bg-card);
-      font-weight: bold;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      color: var(--coral);
+      font-weight: 700;
+      border-color: var(--coral);
+      box-shadow: 0 2px 8px rgba(255,107,107,0.25);
     }
   </style>
 </head>
@@ -113,6 +124,9 @@
         </svg>
       </button>
       <span class="app-bar-title" id="page-title" data-i18n="addExpense">Add Expense</span>
+      <button onclick="handleHeaderLangToggle()" class="btn-icon" style="font-weight:700;font-size:0.8rem;padding:4px 8px;border-radius:12px;border:1px solid var(--border);" aria-label="Language Toggle">
+        <span class="lang-btn-label">中文</span>
+      </button>
       <button class="icon-btn hidden text-danger" id="delete-btn" onclick="deleteExpense()" type="button" aria-label="Delete">
         <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
@@ -194,13 +208,23 @@
     let splitType = 'equal';
     
     const categories = [
-      { id: 'food', icon: '🍔', label: 'Food' },
-      { id: 'transport', icon: '🚗', label: 'Transport' },
-      { id: 'hotel', icon: '🏨', label: 'Hotel' },
-      { id: 'tickets', icon: '🎟️', label: 'Tickets' },
-      { id: 'shopping', icon: '🛍️', label: 'Shopping' },
-      { id: 'other', icon: '📦', label: 'Other' }
+      { id: 'food', icon: '🍔', key: 'catFood' },
+      { id: 'transport', icon: '🚗', key: 'catTransport' },
+      { id: 'hotel', icon: '🏨', key: 'catAccommodation' },
+      { id: 'tickets', icon: '🎟️', key: 'catActivity' },
+      { id: 'shopping', icon: '🛍️', key: 'catShopping' },
+      { id: 'other', icon: '📦', key: 'catOther' }
     ];
+
+    function handleHeaderLangToggle() {
+      i18n.toggle();
+      setupCategoryGrid();
+      renderSplitDetails();
+      const titleEl = document.getElementById('page-title');
+      if (titleEl && titleEl.getAttribute('data-i18n')) {
+        titleEl.textContent = i18n.t(titleEl.getAttribute('data-i18n'));
+      }
+    }
 
     if (!tripId) window.location.href = 'dashboard.html';
 
@@ -232,10 +256,12 @@
 
     function setupCategoryGrid() {
       const grid = document.getElementById('category-grid');
+      if (!grid) return;
+      grid.innerHTML = '';
       categories.forEach(cat => {
         const chip = document.createElement('div');
         chip.className = `category-chip ${cat.id === selectedCategory ? 'active' : ''}`;
-        chip.innerHTML = `<div style="font-size:1.5rem">${cat.icon}</div><div style="font-size:0.75rem">${cat.label}</div>`;
+        chip.innerHTML = `<div style="font-size:1.5rem">${cat.icon}</div><div style="font-size:0.75rem">${i18n.t(cat.key)}</div>`;
         chip.onclick = () => {
           document.querySelectorAll('.category-chip').forEach(c => c.classList.remove('active'));
           chip.classList.add('active');
@@ -262,7 +288,11 @@
       renderSplitDetails();
       
       if (expenseId) {
-        document.getElementById('page-title').textContent = 'Edit Expense';
+        const titleEl = document.getElementById('page-title');
+        titleEl.setAttribute('data-i18n', 'editExpense');
+        titleEl.textContent = i18n.t('editExpense');
+        document.getElementById('save-btn').setAttribute('data-i18n', 'editExpense');
+        document.getElementById('save-btn').textContent = i18n.t('editExpense');
         document.getElementById('delete-btn').classList.remove('hidden');
         
         const expDoc = await db.collection('trips').doc(tripId).collection('expenses').doc(expenseId).get();
@@ -274,15 +304,10 @@
           document.getElementById('notes-input').value = exp.notes || '';
           
           selectedCategory = exp.category || 'other';
-          document.querySelectorAll('.category-chip').forEach((c, i) => {
-            if (categories[i].id === selectedCategory) {
-              c.click();
-            }
-          });
+          setupCategoryGrid();
           
           selectedPayer = exp.paidBy;
           renderPayerSelect();
-          // For simplicity in this demo, defaulting to equal split on edit unless complex logic implemented
           renderSplitDetails(); 
         }
       }
@@ -293,7 +318,7 @@
       sel.innerHTML = '';
       members.forEach(m => {
         const chip = document.createElement('div');
-        chip.className = `paidby-chip ${m.id === selectedPayer ? 'selected' : ''}`;
+        chip.className = `paidby-chip ${m.id === selectedPayer ? 'active' : ''}`;
         chip.textContent = m.displayName || m.email;
         chip.onclick = () => {
           selectedPayer = m.id;
@@ -305,12 +330,16 @@
 
     function renderSplitDetails() {
       const details = document.getElementById('split-details');
+      if (!details) return;
       const amount = parseFloat(document.getElementById('amount-input').value) || 0;
       details.innerHTML = '';
+      const currency = tripData?.currency || 'MYR';
+      const count = members.length || 1;
       
       if (splitType === 'equal') {
-        const perPerson = (amount / members.length).toFixed(2);
-        details.innerHTML = `<div class="text-center p-3 text-gray-500">Split equally among all ${members.length} members — RM ${perPerson} per person</div>`;
+        const perPerson = (amount / count).toFixed(2);
+        const text = i18n.t('splitEquallyAmongText', { count, currency, perPerson });
+        details.innerHTML = `<div class="text-center p-3 text-gray-500">${text}</div>`;
       } else if (splitType === 'custom') {
         members.forEach(m => {
           const row = document.createElement('div');
@@ -371,6 +400,7 @@
         date,
         category: selectedCategory,
         paidBy: selectedPayer,
+        addedBy: currentUser ? currentUser.uid : selectedPayer,
         notes,
         splits,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()

@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>TripTab - Dashboard</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#FF6B6B">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="TripTab">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23FF6B6B'/><text x='50' y='65' font-size='50' text-anchor='middle'>✈️</text></svg>">
     <script src="js/theme.js"></script>
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/components.css">
@@ -25,49 +31,39 @@
 </head>
 <body>
     <div class="page">
-        <!-- App bar -->
-        <header class="app-bar flex-row space-between p-3 align-center">
-            <div class="flex-row align-center gap-2">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="2" y="6" width="20" height="14" rx="3" fill="var(--coral)" fill-opacity="0.9"/>
-                    <rect x="2" y="6" width="20" height="6" rx="3" fill="var(--coral)" fill-opacity="0.4"/>
-                    <path d="M12 4L14.5 8.5H9.5L12 4Z" fill="var(--gold)" fill-opacity="0.9"/>
-                    <circle cx="7" cy="15" r="1.5" fill="rgba(255,255,255,0.6)"/>
-                </svg>
-                <h3 class="m-0">TripTab</h3>
+        <!-- Dashboard Header Hero Banner -->
+        <header class="dashboard-hero-container gradient-bar" style="background: var(--gradient); padding: 1.25rem 1rem 1.5rem; border-radius: 0 0 24px 24px; box-shadow: 0 4px 20px rgba(255, 107, 107, 0.25);">
+            <!-- Top Bar: Logo & Actions -->
+            <div class="flex-row space-between align-center mb-3" style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1rem;">
+                <div class="flex-row align-center gap-2" style="display:flex; align-items:center; gap:10px;">
+                    <div style="width:38px; height:38px; background:rgba(255,255,255,0.22); border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:1.3rem;">✈️</div>
+                    <h2 style="color: #fff; font-weight: 800; font-size: 1.35rem; margin: 0; letter-spacing: -0.3px;">TripTab</h2>
+                </div>
+                <div class="flex-row align-center gap-2" style="display:flex; align-items:center; gap:8px;">
+                    <button onclick="handleHeaderLangToggle()" class="btn-icon" style="font-weight:700; font-size:0.8rem; padding:6px 12px; border-radius:20px; background:rgba(255,255,255,0.22); border:none; color:#fff; cursor:pointer;" aria-label="Language Toggle">
+                        <span class="lang-btn-label">中文</span>
+                    </button>
+                    <button id="theme-toggle" class="btn-icon" onclick="theme.toggle()" style="width:36px; height:36px; background:rgba(255,255,255,0.22); border:none; border-radius:50%; color:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer;" aria-label="Toggle Theme">
+                    </button>
+                </div>
             </div>
-            <div class="flex-row gap-2">
-                <button id="theme-toggle" class="btn-icon">
-                    <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="5"/>
-                        <line x1="12" y1="1" x2="12" y2="3"/>
-                        <line x1="12" y1="21" x2="12" y2="23"/>
-                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
-                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-                        <line x1="1" y1="12" x2="3" y2="12"/>
-                        <line x1="21" y1="12" x2="23" y2="12"/>
-                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
-                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-                    </svg>
+
+            <!-- Hero Body: User Greeting & Main Create Action -->
+            <div style="display:flex; justify-content:space-between; align-items:flex-end; padding-top: 0.25rem;">
+                <div>
+                    <h1 id="user-greeting" style="color:#fff; font-size:1.35rem; font-weight:700; margin:0 0 4px 0;">Good afternoon, 👋</h1>
+                    <div id="active-trips-count" style="color:rgba(255,255,255,0.85); font-size:0.85rem; font-weight:500;">0 active trips</div>
+                </div>
+                <button class="btn" onclick="openCreateTripModal()" data-i18n="createTripBtn" style="background:#fff; color:var(--coral); font-weight:700; font-size:0.85rem; padding:8px 16px; border-radius:20px; border:none; box-shadow:0 4px 12px rgba(0,0,0,0.15); cursor:pointer;">
+                    + Create
                 </button>
             </div>
         </header>
 
         <div class="page-body pb-20">
-            <!-- Greeting section -->
-            <div class="dashboard-header container mt-4 flex-row space-between align-center">
-                <div class="dashboard-greeting">
-                    <h2 class="m-0" id="user-greeting">Good afternoon, 👋</h2>
-                    <span class="text-muted" id="active-trips-count">0 active trips</span>
-                </div>
-                <div class="dashboard-controls">
-                    <button class="btn btn-primary btn-sm" onclick="openCreateTripModal()" data-i18n="createTripBtn">+ Create</button>
-                </div>
-            </div>
-
             <!-- Section header -->
-            <div class="section-header container mt-5">
-                <h3 class="section-title m-0" data-i18n="myTrips">My Trips</h3>
+            <div class="section-header container mt-4" style="padding-left:1rem; padding-right:1rem;">
+                <h3 class="section-title m-0" data-i18n="myTrips" style="font-size:1.15rem; font-weight:700;">My Trips</h3>
             </div>
 
             <!-- Trip cards -->
@@ -127,11 +123,11 @@
                 <form class="create-trip-form" id="create-trip-form">
                     <div class="form-group">
                         <label data-i18n="tripName">Trip Name</label>
-                        <input type="text" id="trip-name" class="form-input" required placeholder="e.g. Bali Summer 2024">
+                        <input type="text" id="trip-name" class="form-input" required data-i18n-placeholder="tripNamePlaceholder" placeholder="e.g. Bali Summer 2024">
                     </div>
                     <div class="form-group">
                         <label data-i18n="tripDescription">Description</label>
-                        <textarea id="trip-desc" class="form-input" rows="2" placeholder="Optional"></textarea>
+                        <textarea id="trip-desc" class="form-input" rows="2" data-i18n-placeholder="optionalPlaceholder" placeholder="Optional"></textarea>
                     </div>
                     <div class="flex-row gap-3">
                         <div class="form-group flex-1">
@@ -159,8 +155,9 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label data-i18n="inviteEmails">Invite Members (Emails)</label>
-                        <textarea id="trip-invites" class="form-input" rows="2" placeholder="Comma-separated emails (optional)"></textarea>
+                        <label data-i18n="inviteMembers">Invite Members (Names or Emails)</label>
+                        <textarea id="trip-invites" class="form-input" rows="2" data-i18n-placeholder="invitePlaceholder" placeholder="e.g. Bob, Alice, friend@example.com"></textarea>
+                        <small class="text-muted" style="font-size: 0.75rem; display: block; margin-top: 4px;" data-i18n="inviteMembersHint">Comma-separated. Enter names for virtual members or emails to invite.</small>
                     </div>
                     <button type="submit" class="btn btn-primary btn-full mt-4" id="create-trip-btn">
                         <span data-i18n="createTripAction">Create Trip</span>
@@ -198,10 +195,10 @@
                 
                 if (!trips || trips.length === 0) {
                     emptyState.classList.remove('hidden');
-                    document.getElementById('active-trips-count').innerText = `0 active trips`;
+                    document.getElementById('active-trips-count').innerText = i18n.t('activeTripsCount', { count: 0 });
                 } else {
                     emptyState.classList.add('hidden');
-                    document.getElementById('active-trips-count').innerText = `${trips.length} active trip${trips.length > 1 ? 's' : ''}`;
+                    document.getElementById('active-trips-count').innerText = i18n.t('activeTripsCount', { count: trips.length });
                     
                     trips.forEach((trip) => {
                         const memberMap = trip.members || {};
@@ -231,16 +228,19 @@
                         const extraCount = memberList.length > 3 ? `<div class="avatar avatar-xs" style="background:var(--gray-500);color:#fff;border:2px solid var(--bg-card)">+${memberList.length - 3}</div>` : '';
                         
                         tripEl.innerHTML = `
-                            <div class="trip-card-header">
-                                <div>
-                                    <div class="trip-card-title">${trip.name}</div>
-                                    <div class="trip-card-dates">${formatDateRange(trip.startDate, trip.endDate)}</div>
+                            <div class="trip-card-banner"></div>
+                            <div class="trip-card-body" style="padding:16px;">
+                                <div class="flex-row space-between align-start gap-2 mb-2" style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+                                    <div style="min-width:0;flex:1;">
+                                        <div class="trip-card-title font-bold" style="font-size:1.1rem;word-break:break-word;overflow:hidden;">${trip.name}</div>
+                                        <div class="trip-card-dates text-muted" style="font-size:0.75rem;">${formatDateRange(trip.startDate, trip.endDate)}</div>
+                                    </div>
+                                    <span class="badge ${balClass}" style="flex-shrink:0;">${balText}</span>
                                 </div>
-                                <span class="badge ${balClass}">${balText}</span>
-                            </div>
-                            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
-                                <div class="avatar-stack">${avatarStackHtml}${extraCount}</div>
-                                <span style="font-size:var(--text-xs);color:var(--text-3)">${memberList.length} ${i18n.t('members').toLowerCase()}</span>
+                                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+                                    <div class="avatar-stack">${avatarStackHtml}${extraCount}</div>
+                                    <span style="font-size:var(--text-xs);color:var(--text-3)">${memberList.length} ${i18n.t('members').toLowerCase()}</span>
+                                </div>
                             </div>
                         `;
                         tripsContainer.appendChild(tripEl);
@@ -248,6 +248,14 @@
                 }
                 i18n.applyAll();
             });
+        }
+
+        function handleHeaderLangToggle() {
+            i18n.toggle();
+            document.querySelectorAll('.lang-btn-label').forEach(el => {
+                el.textContent = i18n.lang === 'en' ? '中文' : 'EN';
+            });
+            if (currentUser) loadDashboard(currentUser);
         }
 
         const modal = document.getElementById('create-modal');
@@ -289,11 +297,15 @@
                     creatorEmail: currentUser.email
                 });
 
-                // Handle initial invites if provided
+                // Handle initial invites / member names if provided
                 if (invitesRaw) {
-                    const emails = invitesRaw.split(',').map(e => e.trim().toLowerCase()).filter(e => e);
-                    for (const email of emails) {
-                        await inviteMember(tripId, email);
+                    const items = invitesRaw.split(',').map(e => e.trim()).filter(e => e);
+                    for (const item of items) {
+                        if (item.includes('@')) {
+                            await inviteMember(tripId, item.toLowerCase());
+                        } else {
+                            await addPlaceholderMember(tripId, item);
+                        }
                     }
                 }
                 
@@ -310,11 +322,6 @@
 
         if (typeof theme !== 'undefined' && theme.init) theme.init();
         if (typeof i18n !== 'undefined' && i18n.init) i18n.init();
-        
-        const themeToggle = document.getElementById('theme-toggle');
-        if (themeToggle && typeof theme !== 'undefined') {
-            themeToggle.addEventListener('click', () => theme.toggle());
-        }
     </script>
 </body>
 </html>

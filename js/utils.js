@@ -28,14 +28,21 @@ function parseAmount(str) {
 // ----------------------------------------------------------------
 function formatDate(dateStr) {
   if (!dateStr) return '';
-  const d = new Date(dateStr + 'T00:00:00');
-  return d.toLocaleDateString('en-MY', { day: 'numeric', month: 'short', year: 'numeric' });
+  const d = new Date(dateStr.includes('T') ? dateStr : dateStr + 'T00:00:00');
+  if (isNaN(d.getTime())) return dateStr;
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  return `${day}/${month}/${year}`;
 }
 
 function formatDateShort(dateStr) {
   if (!dateStr) return '';
-  const d = new Date(dateStr + 'T00:00:00');
-  return d.toLocaleDateString('en-MY', { day: 'numeric', month: 'short' });
+  const d = new Date(dateStr.includes('T') ? dateStr : dateStr + 'T00:00:00');
+  if (isNaN(d.getTime())) return dateStr;
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  return `${day}/${month}`;
 }
 
 function formatDateRange(start, end) {
@@ -272,10 +279,13 @@ function calculateSettlements(members, expenses) {
 }
 
 // ----------------------------------------------------------------
-//  Firestore timestamp helpers
+//  PWA Service Worker Registration
 // ----------------------------------------------------------------
-function nowTimestamp() {
-  return firebase.firestore.FieldValue.serverTimestamp();
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .catch(err => console.log('SW registration error:', err));
+  });
 }
 
 function tsToDate(ts) {

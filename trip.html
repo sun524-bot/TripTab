@@ -4,6 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>TripTab - Trip Details</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#FF6B6B">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="TripTab">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23FF6B6B'/><text x='50' y='65' font-size='50' text-anchor='middle'>✈️</text></svg>">
   
   <script src="js/theme.js"></script>
   
@@ -22,9 +28,8 @@
   <script src="js/expenses.js"></script>
 </head>
 <body>
-  <div class="trip-detail">
-    <!-- App bar -->
-    <header class="app-bar">
+    <!-- App bar — gradient colored to seamlessly connect with the hero below -->
+    <header class="app-bar gradient-bar">
       <button class="btn-icon" onclick="window.location.href='dashboard.html'" aria-label="Back">
         <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
@@ -32,23 +37,27 @@
       </button>
       <span class="app-bar-title" id="trip-name">Loading...</span>
       <div class="app-bar-actions">
-        <button class="icon-btn" onclick="theme.toggle()" aria-label="Toggle Theme">
+        <button class="btn-icon" onclick="handleHeaderLangToggle()" aria-label="Language Toggle" style="font-weight: 700; font-size: 0.8rem; padding: 4px 8px; border-radius: 12px; background: rgba(255,255,255,0.22); border: none;">
+          <span class="lang-btn-label">中文</span>
+        </button>
+        <button class="btn-icon" onclick="theme.toggle()" aria-label="Toggle Theme" style="background: rgba(255,255,255,0.18); border: none; border-radius: 50%;">
           <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
           </svg>
         </button>
-        <button class="icon-btn" onclick="toggleTripMenu()" aria-label="More Options">
+        <button class="btn-icon" onclick="toggleTripMenu()" aria-label="More Options" style="background: rgba(255,255,255,0.18); border: none; border-radius: 50%;">
           <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/>
+            <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
           </svg>
         </button>
       </div>
     </header>
 
-    <!-- Trip hero -->
-    <div class="trip-hero">
-      <div class="trip-hero-name" id="hero-name"></div>
-      <div class="trip-hero-dates" id="hero-dates"></div>
+    <!-- Trip hero — stats only, title lives in the app-bar above -->
+    <div class="trip-hero" style="padding-top: var(--sp-4);">
+      <!-- Invisible anchors so loadTrip() can still update them without showing text -->
+      <div id="hero-name" style="display:none;"></div>
+      <div id="hero-dates" style="display:none;"></div>
       <div class="trip-hero-stats">
         <div class="trip-stat">
           <div class="trip-stat-value" id="stat-total">RM 0</div>
@@ -87,13 +96,39 @@
 
     <!-- MEMBERS TAB -->
     <div id="tab-members" class="tab-panel hidden container">
+      <div class="flex-row space-between align-center my-3" style="padding-top: 0.5rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);">
+        <div>
+          <h4 class="m-0" data-i18n="tripMembers" style="font-size: 1.1rem; font-weight: 700;">Trip Members</h4>
+          <span class="text-muted" style="font-size: 0.75rem;" data-i18n="manageMembersHint">Manage members & invitations</span>
+        </div>
+        <button class="btn btn-primary btn-sm flex-row align-center gap-1" onclick="openAddMemberModal()" style="border-radius: 20px; padding: 0.4rem 0.8rem;">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <span data-i18n="addMember">Add Member</span>
+        </button>
+      </div>
+
+      <!-- Prominent Add Member Banner Card -->
+      <div class="card p-3 mb-3 flex-row space-between align-center" onclick="openAddMemberModal()" style="background: var(--coral-a); border: 1.5px dashed var(--coral); border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: space-between;">
+        <div class="flex-row align-center gap-2" style="display: flex; align-items: center; gap: 12px;">
+          <div style="font-size: 1.5rem;">👤➕</div>
+          <div>
+            <div style="font-weight: 700; font-size: 0.95rem; color: var(--coral);" data-i18n="addMemberOrVirtualName">+ Add Member or Virtual Name</div>
+            <div style="font-size: 0.75rem; color: var(--text-2);" data-i18n="clickHereAssignName">Click here to assign a name or invite via email</div>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-sm" style="pointer-events: none;">Add</button>
+      </div>
+
       <div class="members-list" id="members-list"></div>
-      <!-- Invite section -->
-      <div class="invite-section hidden" id="invite-section">
-        <div class="section-title" data-i18n="inviteMembers">Invite Members</div>
-        <div class="invite-row">
-          <input type="email" class="form-input" id="invite-email" data-i18n-placeholder="inviteByEmail" placeholder="Email address"/>
-          <button class="btn btn-primary" id="invite-btn" onclick="handleInvite()" data-i18n="sendInvite">Send</button>
+
+      <!-- Quick invite link card -->
+      <div class="card p-3 mt-4" style="background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border);">
+        <div class="flex-row space-between align-center">
+          <div>
+            <div style="font-weight: 600; font-size: 0.9rem;" data-i18n="shareTripLink">Share Trip Link</div>
+            <div style="font-size: 0.75rem; color: var(--text-3);" data-i18n="allowFriendsJoin">Allow friends to quickly view or join this trip</div>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="copyTripInviteLink()" data-i18n="copyLink">Copy Link</button>
         </div>
       </div>
     </div>
@@ -101,6 +136,21 @@
     <!-- SETTLE TAB -->
     <div id="tab-settle" class="tab-panel hidden container">
       <div class="settle-panel">
+        <!-- Simplify Debts Toggle Card -->
+        <div class="card p-3 mb-3 flex-row space-between align-center" style="background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border); display:flex; align-items:center; justify-content:space-between;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div style="font-size:1.25rem;">⚡</div>
+            <div>
+              <div style="font-weight: 700; font-size: 0.9rem; color: var(--text-1);" data-i18n="simplifyDebts">Simplify Debts</div>
+              <div style="font-size: 0.75rem; color: var(--text-3);" id="simplify-status-text" data-i18n="directPairwiseText">Direct pairwise payments (exact expense splits)</div>
+            </div>
+          </div>
+          <label class="switch-toggle" style="position:relative; display:inline-block; width:44px; height:24px; flex-shrink:0;">
+            <input type="checkbox" id="toggle-simplify-debts" onchange="handleToggleSimplify(this.checked)" style="opacity:0; width:0; height:0;">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
         <div class="settle-summary" id="settle-summary">
           <div class="settle-summary-emoji">⏳</div>
           <div class="settle-summary-title" data-i18n="calculating">Calculating...</div>
@@ -110,6 +160,10 @@
           <div class="balances-title" data-i18n="netBalance">Net Balance</div>
           <div class="balance-rows" id="balance-rows"></div>
         </div>
+
+        <!-- Printable Calculation Breakdown Section -->
+        <div class="print-breakdown-section" id="print-breakdown-section"></div>
+
         <div style="padding:1rem;margin-top:1rem">
           <button class="btn btn-secondary btn-full" onclick="printSummary()">
             <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="margin-right: 8px;">
@@ -121,24 +175,169 @@
       </div>
     </div>
 
-    <!-- FAB Add expense -->
-    <button class="fab" id="fab-add" onclick="goToAddExpense()">
+    <!-- FAB Add -->
+    <button class="fab" id="fab-add" onclick="handleFabClick()" title="Add">
       <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
         <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
       </svg>
     </button>
+    </div><!-- end .trip-detail -->
 
-    <!-- Bottom Nav -->
-    <nav class="bottom-nav">
-      <a href="dashboard.html" class="nav-item">
-        <div class="nav-icon">✈️</div>
-        <span data-i18n="myTrips">Trips</span>
-      </a>
-      <a href="profile.html" class="nav-item">
-        <div class="nav-icon">👤</div>
-        <span data-i18n="profile">Profile</span>
-      </a>
-    </nav>
+  <!-- Add Member Modal -->
+  <div class="modal-overlay hidden" id="add-member-modal">
+    <div class="modal bottom-sheet">
+      <div class="modal-handle"></div>
+      <div class="flex-row space-between align-center mb-3">
+        <h3 class="modal-title m-0" data-i18n="addMemberTitle">Add Trip Member</h3>
+        <button class="btn-icon" onclick="closeAddMemberModal()" type="button">
+          <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <div class="split-selector mb-3" style="display:flex;background:var(--bg-body);padding:4px;border-radius:8px;">
+        <button type="button" class="split-btn active" id="tab-btn-virtual" onclick="switchAddMemberType('virtual')" style="flex:1;padding:8px;border:none;border-radius:6px;font-size:0.85rem;cursor:pointer;" data-i18n="assignNameTab">Assign Name</button>
+        <button type="button" class="split-btn" id="tab-btn-email" onclick="switchAddMemberType('email')" style="flex:1;padding:8px;border:none;border-radius:6px;font-size:0.85rem;cursor:pointer;" data-i18n="inviteEmailTab">Invite Email</button>
+      </div>
+
+      <!-- Virtual Member Form -->
+      <form id="virtual-member-form" onsubmit="handleCreateVirtualMember(event)">
+        <div class="form-group mb-3">
+          <label style="font-weight:600;font-size:0.85rem;" data-i18n="memberNameLabel">Member Name</label>
+          <input type="text" id="vm-name" class="form-input" data-i18n-placeholder="memberNamePlaceholder" placeholder="e.g. Bob, Charlie" required style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);" />
+          <small class="text-muted" style="font-size:0.75rem;display:block;margin-top:4px;" data-i18n="memberNameHint">Log expenses under this name even before they sign up.</small>
+        </div>
+        <div class="form-group mb-4">
+          <label style="font-weight:600;font-size:0.85rem;" data-i18n="emailOptionalLabel">Email (Optional)</label>
+          <input type="email" id="vm-email" class="form-input" placeholder="e.g. bob@example.com (optional)" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);" />
+        </div>
+        <button type="submit" class="btn btn-primary btn-full" id="vm-submit-btn" data-i18n="addMemberBtn">Add Member</button>
+      </form>
+
+      <!-- Email Invite Form -->
+      <form id="email-invite-form" class="hidden" onsubmit="handleSendEmailInvite(event)">
+        <div class="form-group mb-4">
+          <label style="font-weight:600;font-size:0.85rem;">Email Address</label>
+          <input type="email" id="invite-email-input" class="form-input" placeholder="e.g. friend@example.com" required style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);" />
+          <small class="text-muted" style="font-size:0.75rem;display:block;margin-top:4px;">They will automatically join this trip when they log in.</small>
+        </div>
+        <button type="submit" class="btn btn-primary btn-full" id="invite-submit-btn" data-i18n="sendInvitationBtn">Send Invitation</button>
+      </form>
+
+      <div style="border-top:1px solid var(--border);margin-top:1.25rem;padding-top:1rem;">
+        <button type="button" class="btn btn-secondary btn-full flex-row justify-center align-center gap-2" onclick="copyTripInviteLink()" style="display:flex;align-items:center;justify-content:center;gap:8px;">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+          <span data-i18n="copyTripInviteLinkBtn">Copy Trip Invite Link</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Trip Details Modal -->
+  <div class="modal-overlay hidden" id="edit-trip-modal">
+    <div class="modal bottom-sheet">
+      <div class="modal-handle"></div>
+      <div class="flex-row space-between align-center mb-3">
+        <h3 class="modal-title m-0" data-i18n="editTripDetails">Edit Trip Details</h3>
+        <button class="btn-icon" onclick="closeEditTripModal()" type="button">
+          <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <form id="edit-trip-form" onsubmit="handleSaveTripDetails(event)">
+        <div class="form-group mb-3">
+          <label style="font-weight:600;font-size:0.85rem;" data-i18n="tripName">Trip Name</label>
+          <input type="text" id="edit-trip-name" class="form-input" required data-i18n-placeholder="tripNamePlaceholder" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);" />
+        </div>
+        <div class="form-group mb-3">
+          <label style="font-weight:600;font-size:0.85rem;" data-i18n="description">Description</label>
+          <textarea id="edit-trip-desc" class="form-input" rows="2" data-i18n-placeholder="optionalPlaceholder" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);"></textarea>
+        </div>
+        <div class="flex-row gap-3 mb-3" style="display:flex;gap:12px;">
+          <div class="form-group flex-1" style="flex:1;">
+            <label style="font-weight:600;font-size:0.85rem;" data-i18n="startDate">Start Date</label>
+            <input type="date" id="edit-trip-start" class="form-input" required style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);" />
+          </div>
+          <div class="form-group flex-1" style="flex:1;">
+            <label style="font-weight:600;font-size:0.85rem;" data-i18n="endDate">End Date</label>
+            <input type="date" id="edit-trip-end" class="form-input" required style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);" />
+          </div>
+        </div>
+        <div class="form-group mb-4">
+          <label style="font-weight:600;font-size:0.85rem;" data-i18n="currency">Base Currency</label>
+          <select id="edit-trip-currency" class="form-input" required style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);">
+            <option value="USD">USD - US Dollar</option>
+            <option value="EUR">EUR - Euro</option>
+            <option value="MYR">MYR - Malaysian Ringgit</option>
+            <option value="SGD">SGD - Singapore Dollar</option>
+            <option value="JPY">JPY - Japanese Yen</option>
+            <option value="THB">THB - Thai Baht</option>
+            <option value="IDR">IDR - Indonesian Rupiah</option>
+            <option value="AUD">AUD - Australian Dollar</option>
+            <option value="GBP">GBP - British Pound</option>
+            <option value="CNY">CNY - Chinese Yuan</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary btn-full" id="edit-trip-submit" data-i18n="saveChanges">Save Changes</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Trip Options Menu Modal -->
+  <div class="modal-overlay hidden" id="trip-menu-modal">
+    <div class="modal bottom-sheet">
+      <div class="modal-handle"></div>
+      <div class="flex-row space-between align-center mb-3">
+        <h3 class="modal-title m-0" data-i18n="tripOptions">Trip Options</h3>
+        <button class="btn-icon" onclick="closeTripMenu()" type="button">
+          <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="flex-col gap-2" style="display:flex;flex-direction:column;gap:8px;">
+        <button class="btn btn-secondary btn-full flex-row align-center gap-3 p-3" onclick="copyTripInviteLink(); closeTripMenu();" style="display:flex;align-items:center;gap:12px;text-align:left;padding:12px;">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+          <span style="font-weight:600;" data-i18n="shareTripInviteLink">Share Trip Invite Link</span>
+        </button>
+        <button class="btn btn-secondary btn-full flex-row align-center gap-3 p-3" onclick="openEditTripModal(); closeTripMenu();" style="display:flex;align-items:center;gap:12px;text-align:left;padding:12px;">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          <span style="font-weight:600;" data-i18n="editTripDetails">Edit Trip Details</span>
+        </button>
+        <button class="btn btn-secondary btn-full flex-row align-center gap-3 p-3" onclick="printSummary(); closeTripMenu();" style="display:flex;align-items:center;gap:12px;text-align:left;padding:12px;">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          <span style="font-weight:600;" data-i18n="printSavePDF">Print / Save PDF Summary</span>
+        </button>
+        <button class="btn btn-danger btn-full flex-row align-center gap-3 p-3" onclick="handleConfirmDeleteTrip()" style="display:flex;align-items:center;gap:12px;text-align:left;padding:12px;margin-top:4px;">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+          <span style="font-weight:600;" data-i18n="deleteTrip">Delete Trip</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settlement Details Breakdown Modal -->
+  <div class="modal-overlay hidden" id="settlement-details-modal">
+    <div class="modal bottom-sheet" style="max-height: 85vh; overflow-y: auto;">
+      <div class="modal-handle"></div>
+      <div class="flex-row space-between align-center mb-3">
+        <div>
+          <h3 class="modal-title m-0" id="sd-modal-title" data-i18n="calcBreakdownTitle">Calculation Breakdown</h3>
+          <span class="text-muted" style="font-size: 0.75rem;" data-i18n="calcBreakdownSubtitle">Detailed payment breakdown between members</span>
+        </div>
+        <button class="btn-icon" onclick="closeSettlementDetailsModal()" type="button">
+          <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <!-- Calculation Summary Box -->
+      <div id="sd-summary-box" class="card p-3 mb-3" style="background: var(--bg-hover); border-radius: 12px; border: 1px solid var(--border);">
+      </div>
+
+      <!-- Breakdown Sections -->
+      <div id="sd-breakdown-list" style="display: flex; flex-direction: column; gap: 12px;">
+      </div>
+
+      <div class="mt-4">
+        <button type="button" class="btn btn-secondary btn-full" onclick="closeSettlementDetailsModal()" data-i18n="close">Close</button>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -159,6 +358,16 @@
       });
       i18n.init();
     });
+
+    function handleHeaderLangToggle() {
+      i18n.toggle();
+      document.querySelectorAll('.lang-btn-label').forEach(el => {
+        el.textContent = i18n.lang === 'en' ? '中文' : 'EN';
+      });
+      if (currentUser && typeof loadTrip === 'function') {
+        loadTrip(currentUser);
+      }
+    }
 
     function loadTrip(user) {
       db.collection('trips').doc(tripId).onSnapshot(doc => {
@@ -182,49 +391,62 @@
 
         // isAdmin: check members map role field
         const isAdmin = memberMap[user.uid]?.role === 'admin';
-        if (isAdmin) {
-          document.getElementById('invite-section').classList.remove('hidden');
+        const inviteSec = document.getElementById('invite-section');
+        if (isAdmin && inviteSec) {
+          inviteSec.classList.remove('hidden');
         }
 
         loadMembers(memberMap, isAdmin);
+        calculateSettlements(cachedExpenses);
+      }, err => {
+        console.error('loadTrip error:', err);
       });
     }
 
     function listenTripExpenses() {
-      db.collection('trips').doc(tripId).collection('expenses')
-        .orderBy('date', 'desc')
-        .onSnapshot(snapshot => {
-          const expenses = [];
-          let total = 0;
-          let userBalance = 0;
+      const query = db.collection('trips').doc(tripId).collection('expenses');
+      
+      const handleSnap = snapshot => {
+        const expenses = [];
+        let total = 0;
+        let userBalance = 0;
+        
+        snapshot.forEach(doc => {
+          const exp = { id: doc.id, ...doc.data() };
+          expenses.push(exp);
+          const amt = Number(exp.amount) || 0;
+          total += amt;
           
-          snapshot.forEach(doc => {
-            const exp = { id: doc.id, ...doc.data() };
-            expenses.push(exp);
-            total += exp.amount;
-            
-            // Calc user balance loosely
-            if (exp.paidBy === currentUser.uid) {
-              userBalance += exp.amount;
-            }
-            if (exp.splits && exp.splits[currentUser.uid]) {
-              userBalance -= exp.splits[currentUser.uid];
-            }
-          });
-          
-          document.getElementById('stat-total').textContent = `RM ${total.toFixed(2)}`;
-          document.getElementById('stat-balance').textContent = `RM ${userBalance.toFixed(2)}`;
-          
-          renderExpenses(expenses);
-          
-          // trigger settlement recalculation
-          calculateSettlements(expenses);
+          if (exp.paidBy === currentUser?.uid) {
+            userBalance += amt;
+          }
+          if (exp.splits && exp.splits[currentUser?.uid]) {
+            userBalance -= Number(exp.splits[currentUser.uid]) || 0;
+          }
         });
+        
+        expenses.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+        cachedExpenses = expenses;
+        
+        document.getElementById('stat-total').textContent = `RM ${total.toFixed(2)}`;
+        document.getElementById('stat-balance').textContent = `RM ${userBalance.toFixed(2)}`;
+        
+        renderExpenses(expenses);
+        calculateSettlements(expenses);
+      };
+
+      query.orderBy('date', 'desc').onSnapshot(handleSnap, err => {
+        console.warn('orderBy date snapshot fallback:', err);
+        query.onSnapshot(handleSnap, err2 => {
+          console.error('Expenses snapshot error:', err2);
+        });
+      });
     }
 
     function renderExpenses(expenses) {
       const list = document.getElementById('expense-list');
       const empty = document.getElementById('expenses-empty');
+      if (!list || !empty) return;
       list.innerHTML = '';
       
       if (expenses.length === 0) {
@@ -247,17 +469,19 @@
         item.className = 'expense-item card mb-2';
         item.onclick = () => window.location.href = `add-expense.html?tripId=${tripId}&expenseId=${exp.id}`;
         
-        const mySplit = exp.splits && exp.splits[currentUser.uid] ? exp.splits[currentUser.uid] : 0;
-        
+        const mySplit = exp.splits && exp.splits[currentUser?.uid] ? exp.splits[currentUser.uid] : 0;
+        const payerData = tripMembers[exp.paidBy] || {};
+        const payerName = payerData.name || payerData.displayName || payerData.email || 'Someone';
+
         item.innerHTML = `
           <div class="flex justify-between items-center">
             <div>
               <div class="font-bold">${exp.title}</div>
-              <div class="text-sm text-gray-500">Paid by ${tripMembers[exp.paidBy]?.displayName || 'Someone'}</div>
+              <div class="text-sm text-gray-500">${i18n.t('paidByLabel')} ${payerName}</div>
             </div>
             <div class="text-right">
               <div class="font-bold text-coral">RM ${exp.amount.toFixed(2)}</div>
-              ${mySplit > 0 ? `<div class="text-xs text-gray-500">You owe RM ${mySplit.toFixed(2)}</div>` : ''}
+              ${mySplit > 0 ? `<div class="text-xs text-gray-500">${i18n.t('youOweLabel')} RM ${mySplit.toFixed(2)}</div>` : ''}
             </div>
           </div>
         `;
@@ -267,35 +491,54 @@
 
     function loadMembers(memberMap, isAdmin) {
       const list = document.getElementById('members-list');
+      if (!list) return;
       list.innerHTML = '';
 
+      if (!memberMap || Object.keys(memberMap).length === 0) {
+        list.innerHTML = `
+          <div class="empty-state p-4 text-center">
+            <div class="empty-state-icon" style="font-size:36px;">👤</div>
+            <div class="empty-state-title" style="font-size:1rem;font-weight:700;">${i18n.t('noMembersYet')}</div>
+            <p class="text-muted" style="font-size:0.8rem;">${i18n.t('tapAddMember')}</p>
+          </div>
+        `;
+        return;
+      }
+
       Object.entries(memberMap).forEach(([uid, memberData]) => {
-        const name = memberData.name || memberData.displayName || 'Unknown';
-        const email = memberData.email || '';
-        const role = memberData.role || 'member';
-        const isMe = uid === currentUser.uid;
+        const m = memberData || {};
+        const name = m.name || m.displayName || m.email || 'Member';
+        const email = m.email || '';
+        const role = m.role || 'member';
+        const isPlaceholder = !!m.isPlaceholder;
+        const isMe = uid === currentUser?.uid;
 
         const row = document.createElement('div');
-        row.className = 'member-row';
+        row.className = 'member-row card mb-2 p-3 flex-row align-center space-between';
+        row.style.background = 'var(--bg-card)';
+        row.style.borderRadius = '12px';
+        row.style.border = '1px solid var(--border)';
 
-        const avatarEl = createAvatarEl(name, uid, 'avatar-sm');
-        avatarEl.style.background = avatarColor(uid);
+        let badge = `<span class="member-role">${role}</span>`;
+        if (isPlaceholder) {
+          badge = `<span class="badge badge-neutral" style="font-size:0.75rem;padding:2px 8px;border-radius:10px;background:var(--bg-body);color:var(--text-2);">${i18n.t('virtualBadge')}</span>`;
+        }
 
         let removeBtn = '';
         if (isAdmin && !isMe) {
-          removeBtn = `<button class="btn btn-sm btn-danger" onclick="handleRemoveMember('${uid}', '${name}')" style="margin-left:auto">
+          removeBtn = `<button class="btn btn-sm btn-danger ml-2" onclick="handleRemoveMember('${uid}', '${name.replace(/'/g, "\\'")}')" title="${i18n.t('removeMemberTitle')}">
             <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/></svg>
           </button>`;
         }
 
         row.innerHTML = `
-          <div style="display:flex;align-items:center;gap:12px;flex:1">
-            <div class="avatar avatar-sm" style="background:${avatarColor(uid)};flex-shrink:0">${getInitials(name)}</div>
-            <div class="member-info">
-              <div class="member-name">${name}${isMe ? ' (You)' : ''}</div>
-              <div class="member-email">${email}</div>
+          <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;">
+            <div class="avatar avatar-sm" style="background:${avatarColor(uid)};flex-shrink:0;">${getInitials(name)}</div>
+            <div class="member-info" style="min-width:0;">
+              <div class="member-name font-bold" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${name}${isMe ? ` ${i18n.t('youSuffix')}` : ''}</div>
+              <div class="member-email text-muted" style="font-size:0.75rem;">${email || (isPlaceholder ? i18n.t('unregisteredMember') : '')}</div>
             </div>
-            <span class="member-role">${role}</span>
+            ${badge}
           </div>
           ${removeBtn}
         `;
@@ -303,9 +546,174 @@
       });
     }
 
+    // Modal Control Functions
+    function openAddMemberModal() {
+      document.getElementById('add-member-modal').classList.remove('hidden');
+    }
+
+    function closeAddMemberModal() {
+      document.getElementById('add-member-modal').classList.add('hidden');
+      document.getElementById('virtual-member-form').reset();
+      document.getElementById('email-invite-form').reset();
+    }
+
+    function switchAddMemberType(type) {
+      const btnVirt = document.getElementById('tab-btn-virtual');
+      const btnEmail = document.getElementById('tab-btn-email');
+      const formVirt = document.getElementById('virtual-member-form');
+      const formEmail = document.getElementById('email-invite-form');
+
+      if (type === 'virtual') {
+        btnVirt.classList.add('active');
+        btnVirt.style.color = 'var(--coral)';
+        btnVirt.style.border = '1px solid var(--coral)';
+        btnVirt.style.background = 'var(--bg-card)';
+
+        btnEmail.classList.remove('active');
+        btnEmail.style.color = 'var(--text-2)';
+        btnEmail.style.border = '1px solid transparent';
+        btnEmail.style.background = 'transparent';
+
+        formVirt.classList.remove('hidden');
+        formEmail.classList.add('hidden');
+      } else {
+        btnEmail.classList.add('active');
+        btnEmail.style.color = 'var(--coral)';
+        btnEmail.style.border = '1px solid var(--coral)';
+        btnEmail.style.background = 'var(--bg-card)';
+
+        btnVirt.classList.remove('active');
+        btnVirt.style.color = 'var(--text-2)';
+        btnVirt.style.border = '1px solid transparent';
+        btnVirt.style.background = 'transparent';
+
+        formEmail.classList.remove('hidden');
+        formVirt.classList.add('hidden');
+      }
+    }
+
+    async function handleCreateVirtualMember(e) {
+      e.preventDefault();
+      const name = document.getElementById('vm-name').value.trim();
+      const email = document.getElementById('vm-email').value.trim();
+      const btn = document.getElementById('vm-submit-btn');
+
+      if (!name) return showToast('Please enter a member name');
+      btn.disabled = true;
+
+      try {
+        await addPlaceholderMember(tripId, name, email);
+        showToast(`Member "${name}" added to trip!`, 'success');
+        closeAddMemberModal();
+      } catch (err) {
+        console.error(err);
+        showToast('Error adding member', 'error');
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    async function handleSendEmailInvite(e) {
+      e.preventDefault();
+      const email = document.getElementById('invite-email-input').value.trim().toLowerCase();
+      const btn = document.getElementById('invite-submit-btn');
+      if (!email) return;
+
+      btn.disabled = true;
+      try {
+        const result = await inviteMember(tripId, email);
+        if (result.found) {
+          showToast('Member added to trip!', 'success');
+        } else {
+          showToast('Invite saved! They will automatically join when they sign up.', 'success');
+        }
+        closeAddMemberModal();
+      } catch (err) {
+        console.error(err);
+        showToast('Error sending invite', 'error');
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    function copyTripInviteLink() {
+      const inviteUrl = window.location.href;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(inviteUrl).then(() => {
+          showToast('Trip invite link copied to clipboard!', 'success');
+        }).catch(() => {
+          prompt('Copy trip invite link:', inviteUrl);
+        });
+      } else {
+        prompt('Copy trip invite link:', inviteUrl);
+      }
+    }
+
+    function toggleTripMenu() {
+      document.getElementById('trip-menu-modal').classList.remove('hidden');
+    }
+
+    function closeTripMenu() {
+      document.getElementById('trip-menu-modal').classList.add('hidden');
+    }
+
+    function openEditTripModal() {
+      if (!currentTrip) return;
+      document.getElementById('edit-trip-name').value = currentTrip.name || '';
+      document.getElementById('edit-trip-desc').value = currentTrip.description || '';
+      document.getElementById('edit-trip-start').value = currentTrip.startDate || '';
+      document.getElementById('edit-trip-end').value = currentTrip.endDate || '';
+      document.getElementById('edit-trip-currency').value = currentTrip.currency || 'MYR';
+
+      if (typeof i18n !== 'undefined') i18n.applyAll();
+      document.getElementById('edit-trip-modal').classList.remove('hidden');
+    }
+
+    function closeEditTripModal() {
+      document.getElementById('edit-trip-modal').classList.add('hidden');
+    }
+
+    async function handleSaveTripDetails(e) {
+      e.preventDefault();
+      const name = document.getElementById('edit-trip-name').value.trim();
+      const description = document.getElementById('edit-trip-desc').value.trim();
+      const startDate = document.getElementById('edit-trip-start').value;
+      const endDate = document.getElementById('edit-trip-end').value;
+      const currency = document.getElementById('edit-trip-currency').value;
+      const btn = document.getElementById('edit-trip-submit');
+
+      if (!name) return showToast('Trip name is required');
+      btn.disabled = true;
+
+      try {
+        await updateTripDetails(tripId, { name, description, startDate, endDate, currency });
+        showToast('Trip details updated!', 'success');
+        closeEditTripModal();
+      } catch (err) {
+        console.error(err);
+        showToast('Error updating trip', 'error');
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    function handleConfirmDeleteTrip() {
+      closeTripMenu();
+      if (confirm('Are you sure you want to delete this trip and all its expenses? This action cannot be undone.')) {
+        deleteTrip(tripId).then(() => {
+          showToast('Trip deleted', 'success');
+          window.location.href = 'dashboard.html';
+        }).catch(err => {
+          console.error(err);
+          showToast('Error deleting trip', 'error');
+        });
+      }
+    }
+
     async function handleInvite() {
       const emailInput = document.getElementById('invite-email');
       const btn = document.getElementById('invite-btn');
+      if (!emailInput) return;
       const email = emailInput.value.trim().toLowerCase();
       if (!email) return;
       setLoading(btn, true);
@@ -341,23 +749,151 @@
       });
     }
 
-    function calculateSettlements(expenses) {
+    let isSimplifyDebts = false;
+
+    function handleToggleSimplify(checked) {
+      isSimplifyDebts = checked;
+      const statusText = document.getElementById('simplify-status-text');
+      if (statusText) {
+        statusText.textContent = checked 
+          ? i18n.t('minimizeTransactionsText')
+          : i18n.t('directPairwiseText');
+      }
+      calculateSettlements(cachedExpenses);
+    }
+
+    function calculateSettlements(expenses = []) {
       const balances = {};
+      
+      // Initialize balances for all members in tripMembers so every member appears in Net Balance!
+      if (tripMembers && typeof tripMembers === 'object') {
+        Object.keys(tripMembers).forEach(uid => {
+          balances[uid] = 0;
+        });
+      }
       
       expenses.forEach(exp => {
         const payer = exp.paidBy;
-        if (!balances[payer]) balances[payer] = 0;
-        balances[payer] += exp.amount;
+        if (payer) {
+          if (balances[payer] === undefined) balances[payer] = 0;
+          balances[payer] += Number(exp.amount) || 0;
+        }
         
         if (exp.splits) {
           Object.keys(exp.splits).forEach(user => {
-            if (!balances[user]) balances[user] = 0;
-            balances[user] -= exp.splits[user];
+            if (balances[user] === undefined) balances[user] = 0;
+            balances[user] -= Number(exp.splits[user]) || 0;
           });
         }
       });
       
-      renderSettlement(balances);
+      if (isSimplifyDebts) {
+        renderSettlement(balances);
+      } else {
+        renderDirectPairwiseSettlement(balances, expenses);
+      }
+    }
+
+    function renderDirectPairwiseSettlement(balances, expenses) {
+      const summary = document.getElementById('settle-summary');
+      const list = document.getElementById('settle-list');
+      const bRows = document.getElementById('balance-rows');
+      
+      if (!summary || !list || !bRows) return;
+      list.innerHTML = '';
+      bRows.innerHTML = '';
+
+      // Render Net Balances
+      Object.keys(balances).forEach(uid => {
+        const b = balances[uid] || 0;
+        const m = tripMembers[uid] || {};
+        const name = m.name || m.displayName || m.email || 'Member';
+        
+        const row = document.createElement('div');
+        row.className = 'flex justify-between items-center py-2 border-b';
+        row.style.padding = '8px 0';
+        row.style.borderBottom = '1px solid var(--border)';
+        row.innerHTML = `
+          <span style="font-weight:600;">${name}</span>
+          <span class="${b >= 0 ? 'text-success' : 'text-danger'} font-bold">
+            ${b >= 0 ? '+' : ''}RM ${b.toFixed(2)}
+          </span>
+        `;
+        bRows.appendChild(row);
+      });
+
+      // Calculate direct pairwise matrix
+      const uids = Object.keys(tripMembers || {});
+      const pairwise = {};
+
+      uids.forEach(u1 => {
+        pairwise[u1] = {};
+        uids.forEach(u2 => {
+          pairwise[u1][u2] = 0;
+        });
+      });
+
+      expenses.forEach(exp => {
+        const payer = exp.paidBy;
+        const splits = exp.splits || {};
+        if (payer && pairwise[payer]) {
+          Object.keys(splits).forEach(user => {
+            if (user !== payer && pairwise[user]) {
+              const share = Number(splits[user]) || 0;
+              pairwise[user][payer] += share; // user owes payer
+            }
+          });
+        }
+      });
+
+      // Net out pairwise: pairwise[A][B] vs pairwise[B][A]
+      const directTransactions = [];
+      for (let i = 0; i < uids.length; i++) {
+        for (let j = i + 1; j < uids.length; j++) {
+          const u1 = uids[i];
+          const u2 = uids[j];
+          const u1_owes_u2 = pairwise[u1][u2] || 0;
+          const u2_owes_u1 = pairwise[u2][u1] || 0;
+          const diff = u1_owes_u2 - u2_owes_u1;
+
+          if (diff > 0.01) {
+            directTransactions.push({ from: u1, to: u2, amount: diff });
+          } else if (diff < -0.01) {
+            directTransactions.push({ from: u2, to: u1, amount: -diff });
+          }
+        }
+      }
+
+      if (directTransactions.length === 0) {
+        summary.innerHTML = `<div class="settle-summary-emoji">🎉</div><div class="settle-summary-title">${i18n.t('allSettled')}</div><div class="settle-summary-sub" style="font-size:0.8rem;color:var(--text-3);">${i18n.t('noPaymentsNeeded')}</div>`;
+        return;
+      }
+
+      summary.innerHTML = `<div class="settle-summary-emoji">📋</div><div class="settle-summary-title">${directTransactions.length} ${i18n.t('directPaymentsNeeded')}</div><div style="font-size:0.75rem;color:var(--text-3);">${i18n.t('directPairwiseDebts')}</div>`;
+
+      directTransactions.forEach(t => {
+        const fromData = tripMembers[t.from] || {};
+        const toData   = tripMembers[t.to]   || {};
+        const fromName = fromData.name || fromData.displayName || fromData.email || 'Member';
+        const toName   = toData.name   || toData.displayName   || toData.email   || 'Member';
+        const currency = currentTrip?.currency || 'MYR';
+
+        const el = document.createElement('div');
+        el.className = 'settle-card mb-2';
+        el.style.cursor = 'pointer';
+        el.title = i18n.t('clickViewBreakdown');
+        el.onclick = () => openSettlementDetails(t.from, t.to, t.amount);
+        el.innerHTML = `
+          <div class="avatar avatar-sm" style="background:${avatarColor(t.from)};flex-shrink:0;">${getInitials(fromName)}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:.875rem;font-weight:600;color:var(--text-1)">${fromName}</div>
+            <div style="font-size:.75rem;color:var(--text-3)">${i18n.t('paysLabel')} ${toName} <span style="color:var(--coral);font-weight:600;margin-left:4px;">${i18n.t('detailsLabel')}</span></div>
+          </div>
+          <div class="settle-amount" style="font-weight:700;">${formatCurrency(t.amount, currency)}</div>
+          <div class="avatar avatar-sm" style="background:${avatarColor(t.to)};flex-shrink:0;">${getInitials(toName)}</div>
+        `;
+        list.appendChild(el);
+      });
     }
     
     function renderSettlement(balances) {
@@ -365,6 +901,7 @@
       const list = document.getElementById('settle-list');
       const bRows = document.getElementById('balance-rows');
       
+      if (!summary || !list || !bRows) return;
       list.innerHTML = '';
       bRows.innerHTML = '';
       
@@ -372,13 +909,16 @@
       let creditors = [];
       
       Object.keys(balances).forEach(uid => {
-        const b = balances[uid];
-        const name = tripMembers[uid]?.displayName || 'Unknown';
+        const b = balances[uid] || 0;
+        const m = tripMembers[uid] || {};
+        const name = m.name || m.displayName || m.email || 'Member';
         
         const row = document.createElement('div');
         row.className = 'flex justify-between items-center py-2 border-b';
+        row.style.padding = '8px 0';
+        row.style.borderBottom = '1px solid var(--border)';
         row.innerHTML = `
-          <span>${name}</span>
+          <span style="font-weight:600;">${name}</span>
           <span class="${b >= 0 ? 'text-success' : 'text-danger'} font-bold">
             ${b >= 0 ? '+' : ''}RM ${b.toFixed(2)}
           </span>
@@ -389,9 +929,7 @@
         if (b > 0.01) creditors.push({uid, amount: b});
       });
       
-      summary.innerHTML = `<div class="settle-summary-emoji">💸</div><div class="settle-summary-title">Balances calculated</div>`;
-      
-      // Greedy settlement
+      // Greedy settlement algorithm
       let transactions = [];
       let i = 0, j = 0;
       
@@ -415,33 +953,208 @@
       }
       
       if (transactions.length === 0) {
-        summary.innerHTML = '<div class="settle-summary-emoji">🎉</div><div class="settle-summary-title" data-i18n="allSettled">All settled up!</div><div class="settle-summary-sub" data-i18n="allSettledHint">No payments needed.</div>';
-        i18n.applyAll();
+        summary.innerHTML = `<div class="settle-summary-emoji">🎉</div><div class="settle-summary-title">${i18n.t('allSettled')}</div><div class="settle-summary-sub" style="font-size:0.8rem;color:var(--text-3);">${i18n.t('noPaymentsNeededSimple')}</div>`;
         return;
       }
 
-      summary.innerHTML = `<div class="settle-summary-emoji">💸</div><div class="settle-summary-title">${transactions.length} payment(s) needed</div>`;
+      summary.innerHTML = `<div class="settle-summary-emoji">💸</div><div class="settle-summary-title">${transactions.length} ${i18n.t('paymentsNeeded')}</div>`;
 
       transactions.forEach(t => {
         const fromData = tripMembers[t.from] || {};
         const toData   = tripMembers[t.to]   || {};
-        const fromName = fromData.name || fromData.displayName || 'Unknown';
-        const toName   = toData.name   || toData.displayName   || 'Unknown';
+        const fromName = fromData.name || fromData.displayName || fromData.email || 'Member';
+        const toName   = toData.name   || toData.displayName   || toData.email   || 'Member';
         const currency = currentTrip?.currency || 'MYR';
 
         const el = document.createElement('div');
-        el.className = 'settle-card';
+        el.className = 'settle-card mb-2';
+        el.style.cursor = 'pointer';
+        el.title = i18n.t('clickViewBreakdown');
+        el.onclick = () => openSettlementDetails(t.from, t.to, t.amount);
         el.innerHTML = `
-          <div class="avatar avatar-sm" style="background:${avatarColor(t.from)}">${getInitials(fromName)}</div>
+          <div class="avatar avatar-sm" style="background:${avatarColor(t.from)};flex-shrink:0;">${getInitials(fromName)}</div>
           <div style="flex:1;min-width:0">
             <div style="font-size:.875rem;font-weight:600;color:var(--text-1)">${fromName}</div>
-            <div style="font-size:.75rem;color:var(--text-3)">${i18n.t('pays')} ${toName}</div>
+            <div style="font-size:.75rem;color:var(--text-3)">${i18n.t('paysLabel')} ${toName} <span style="color:var(--coral);font-weight:600;margin-left:4px;">${i18n.t('detailsLabel')}</span></div>
           </div>
-          <div class="settle-amount">${formatCurrency(t.amount, currency)}</div>
-          <div class="avatar avatar-sm" style="background:${avatarColor(t.to)}">${getInitials(toName)}</div>
+          <div class="settle-amount" style="font-weight:700;">${formatCurrency(t.amount, currency)}</div>
+          <div class="avatar avatar-sm" style="background:${avatarColor(t.to)};flex-shrink:0;">${getInitials(toName)}</div>
         `;
         list.appendChild(el);
       });
+    }
+
+    function openSettlementDetails(fromUid, toUid, netAmount) {
+      const fromData = tripMembers[fromUid] || {};
+      const toData   = tripMembers[toUid]   || {};
+      const fromName = fromData.name || fromData.displayName || fromData.email || 'Member';
+      const toName   = toData.name   || toData.displayName   || toData.email   || 'Member';
+      const currency = currentTrip?.currency || 'MYR';
+
+      const modalTitle = document.getElementById('sd-modal-title');
+      if (modalTitle) modalTitle.textContent = `${i18n.t('calcBreakdownTitle')}: ${fromName} ➔ ${toName}`;
+
+      const modalSubtitle = document.querySelector('#settlement-details-modal .text-muted');
+      if (modalSubtitle) modalSubtitle.textContent = i18n.t('calcBreakdownSubtitle');
+
+      const expensesPaidByToForFrom = [];
+      let totalPaidByToForFrom = 0;
+
+      const expensesPaidByFromForTo = [];
+      let totalPaidByFromForTo = 0;
+
+      (cachedExpenses || []).forEach(exp => {
+        const amt = Number(exp.amount) || 0;
+        const splits = exp.splits || {};
+
+        // Case 1: Paid by TO (Y), FROM (X) is included in splits
+        if (exp.paidBy === toUid && splits[fromUid]) {
+          const fromShare = Number(splits[fromUid]) || 0;
+          if (fromShare > 0) {
+            expensesPaidByToForFrom.push({
+              title: exp.title,
+              date: exp.date,
+              totalAmount: amt,
+              share: fromShare
+            });
+            totalPaidByToForFrom += fromShare;
+          }
+        }
+
+        // Case 2: Paid by FROM (X), TO (Y) is included in splits
+        if (exp.paidBy === fromUid && splits[toUid]) {
+          const toShare = Number(splits[toUid]) || 0;
+          if (toShare > 0) {
+            expensesPaidByFromForTo.push({
+              title: exp.title,
+              date: exp.date,
+              totalAmount: amt,
+              share: toShare
+            });
+            totalPaidByFromForTo += toShare;
+          }
+        }
+      });
+
+      // Render Summary Formula Box
+      const directNet = totalPaidByToForFrom - totalPaidByFromForTo;
+      const diff = Math.abs(netAmount - directNet);
+      const summaryBox = document.getElementById('sd-summary-box');
+
+      if (summaryBox) {
+        if (diff > 0.01) {
+          summaryBox.innerHTML = `
+            <div style="font-size: 0.85rem; display: flex; flex-direction: column; gap: 6px;">
+              <div class="flex-row space-between align-center" style="display:flex;justify-content:space-between;">
+                <span style="color:var(--text-2);">${toName} ${i18n.t('calcPaidFor')} ${fromName}:</span>
+                <span style="font-weight:700;color:var(--coral);">+${formatCurrency(totalPaidByToForFrom, currency)}</span>
+              </div>
+              <div class="flex-row space-between align-center" style="display:flex;justify-content:space-between;">
+                <span style="color:var(--text-2);">${i18n.t('calcDeduct')} ${fromName} ${i18n.t('calcPaidFor')} ${toName}:</span>
+                <span style="font-weight:700;color:var(--green);">-${formatCurrency(totalPaidByFromForTo, currency)}</span>
+              </div>
+              <div class="flex-row space-between align-center" style="display:flex;justify-content:space-between;border-top:1px dashed var(--border);padding-top:4px;">
+                <span style="color:var(--text-2);">${i18n.t('calcDirectPairwiseBalance')}</span>
+                <span style="font-weight:700;color:var(--text-1);">${formatCurrency(directNet, currency)}</span>
+              </div>
+              <div class="flex-row space-between align-center" style="display:flex;justify-content:space-between;">
+                <span style="color:var(--text-2);font-size:0.75rem;">${i18n.t('calcGroupDebtSimplification')}</span>
+                <span style="font-weight:700;font-size:0.75rem;color:${netAmount < directNet ? 'var(--green)' : 'var(--coral)'};">
+                  ${netAmount < directNet ? '-' : '+'}${formatCurrency(diff, currency)}
+                </span>
+              </div>
+              <div style="font-size:0.72rem;color:var(--text-3);font-style:italic;margin-top:2px;">
+                ${i18n.t('calcAdjustedNote')}
+              </div>
+              <div style="border-top: 1px solid var(--border); margin-top: 6px; padding-top: 8px; display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-weight: 700; font-size: 0.95rem;">${i18n.t('calcFinalPayment')}</span>
+                <span style="font-weight: 800; font-size: 1.15rem; color: var(--coral);">${formatCurrency(netAmount, currency)}</span>
+              </div>
+            </div>
+          `;
+        } else {
+          summaryBox.innerHTML = `
+            <div style="font-size: 0.85rem; display: flex; flex-direction: column; gap: 8px;">
+              <div class="flex-row space-between align-center" style="display:flex;justify-content:space-between;">
+                <span style="color:var(--text-2);">${toName} ${i18n.t('calcPaidFor')} ${fromName}:</span>
+                <span style="font-weight:700;color:var(--coral);">+${formatCurrency(totalPaidByToForFrom, currency)}</span>
+              </div>
+              <div class="flex-row space-between align-center" style="display:flex;justify-content:space-between;">
+                <span style="color:var(--text-2);">${i18n.t('calcDeduct')} ${fromName} ${i18n.t('calcPaidFor')} ${toName}:</span>
+                <span style="font-weight:700;color:var(--green);">-${formatCurrency(totalPaidByFromForTo, currency)}</span>
+              </div>
+              <div style="border-top: 1px dashed var(--border); margin-top: 6px; padding-top: 8px; display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-weight: 700; font-size: 0.95rem;">${i18n.t('calcNetPayment')}</span>
+                <span style="font-weight: 800; font-size: 1.15rem; color: var(--coral);">${formatCurrency(netAmount, currency)}</span>
+              </div>
+            </div>
+          `;
+        }
+      }
+
+      // Render Breakdown Lists
+      const breakdownList = document.getElementById('sd-breakdown-list');
+      if (breakdownList) {
+        breakdownList.innerHTML = '';
+
+        if (expensesPaidByToForFrom.length === 0 && expensesPaidByFromForTo.length === 0) {
+          const infoBanner = document.createElement('div');
+          infoBanner.className = 'card p-3 mb-2';
+          infoBanner.style.background = 'var(--bg-hover)';
+          infoBanner.style.borderRadius = '10px';
+          infoBanner.style.border = '1px dashed var(--border)';
+          infoBanner.style.fontSize = '0.8rem';
+          infoBanner.style.color = 'var(--text-2)';
+          infoBanner.innerHTML = `ℹ️ <strong>${i18n.t('calcIndirectTransfer')}</strong> ${fromName} ${i18n.t('calcIndirectTransferDesc')} ${toName} ${i18n.t('calcIndirectTransferDesc2')}`;
+          breakdownList.appendChild(infoBanner);
+        }
+
+        // Section 1: Expenses paid by TO (Y)
+        const sec1 = document.createElement('div');
+        sec1.innerHTML = `<h5 style="margin: 4px 0 8px 0; font-size: 0.85rem; font-weight: 700; color: var(--text-1);">💳 ${toName} ${i18n.t('calcPaidFor')} ${fromName} (${fromName}${i18n.t('calcShareLabel')}):</h5>`;
+        if (expensesPaidByToForFrom.length === 0) {
+          sec1.innerHTML += `<div class="text-muted p-2" style="font-size: 0.8rem; background: var(--bg-body); border-radius: 8px;">${i18n.t('calcNoDirectExpenses')} ${toName} ${i18n.t('calcNoDirectExpenses2')} ${fromName}.</div>`;
+        } else {
+          expensesPaidByToForFrom.forEach(item => {
+            sec1.innerHTML += `
+              <div class="card p-3 mb-2 flex-row space-between align-center" style="background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                  <div style="font-weight: 600; font-size: 0.85rem;">${item.title}</div>
+                  <div style="font-size: 0.75rem; color: var(--text-3);">${formatDate(item.date)} • ${i18n.t('totalLabel')} ${formatCurrency(item.totalAmount, currency)}</div>
+                </div>
+                <div style="font-weight: 700; color: var(--coral); font-size: 0.9rem;">+${formatCurrency(item.share, currency)}</div>
+              </div>
+            `;
+          });
+        }
+        breakdownList.appendChild(sec1);
+
+        // Section 2: Expenses paid by FROM (X)
+        const sec2 = document.createElement('div');
+        sec2.innerHTML = `<h5 style="margin: 12px 0 8px 0; font-size: 0.85rem; font-weight: 700; color: var(--text-1);">🔄 ${i18n.t('calcDeductSection')} ${fromName} (${toName}${i18n.t('calcShareLabel')}):</h5>`;
+        if (expensesPaidByFromForTo.length === 0) {
+          sec2.innerHTML += `<div class="text-muted p-2" style="font-size: 0.8rem; background: var(--bg-body); border-radius: 8px;">${i18n.t('calcNoOffsetExpenses')} ${fromName} ${i18n.t('calcNoDirectExpenses2')} ${toName}.</div>`;
+        } else {
+          expensesPaidByFromForTo.forEach(item => {
+            sec2.innerHTML += `
+              <div class="card p-3 mb-2 flex-row space-between align-center" style="background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                  <div style="font-weight: 600; font-size: 0.85rem;">${item.title}</div>
+                  <div style="font-size: 0.75rem; color: var(--text-3);">${formatDate(item.date)} • ${i18n.t('totalLabel')} ${formatCurrency(item.totalAmount, currency)}</div>
+                </div>
+                <div style="font-weight: 700; color: var(--green); font-size: 0.9rem;">-${formatCurrency(item.share, currency)}</div>
+              </div>
+            `;
+          });
+        }
+        breakdownList.appendChild(sec2);
+      }
+
+      document.getElementById('settlement-details-modal').classList.remove('hidden');
+    }
+
+    function closeSettlementDetailsModal() {
+      document.getElementById('settlement-details-modal').classList.add('hidden');
     }
 
     function markSettled(from, to, amount) {
@@ -450,27 +1163,112 @@
 
     function switchTab(tabId) {
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+      const activeTabBtn = document.querySelector(`[data-tab="${tabId}"]`);
+      if (activeTabBtn) activeTabBtn.classList.add('active');
       
-      document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
-      document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+      document.querySelectorAll('.tab-panel').forEach(p => {
+        p.classList.add('hidden');
+        p.classList.remove('active');
+      });
+
+      const target = document.getElementById(`tab-${tabId}`);
+      if (target) {
+        target.classList.remove('hidden');
+        target.classList.add('active');
+      }
+    }
+
+    function handleFabClick() {
+      const activeTab = document.querySelector('.tab-btn.active')?.dataset.tab;
+      if (activeTab === 'members') {
+        openAddMemberModal();
+      } else {
+        goToAddExpense();
+      }
     }
 
     function goToAddExpense() {
       window.location.href = `add-expense.html?tripId=${tripId}`;
     }
 
-    function toggleTripMenu() {
-      if (confirm('Delete this trip?')) {
-        deleteTrip(tripId).then(() => {
-          window.location.href = 'dashboard.html';
-        }).catch(err => {
-          showToast('Error deleting trip', 'error');
-        });
+    function buildPrintBreakdown() {
+      const container = document.getElementById('print-breakdown-section');
+      if (!container) return;
+      container.innerHTML = `<h3 style="font-size:1.1rem;font-weight:700;margin-bottom:1rem;border-bottom:2px solid #333;padding-bottom:0.5rem;color:#000;">Calculation Breakdown Report</h3>`;
+
+      const uids = Object.keys(tripMembers || {});
+      const currency = currentTrip?.currency || 'MYR';
+
+      for (let i = 0; i < uids.length; i++) {
+        for (let j = i + 1; j < uids.length; j++) {
+          const u1 = uids[i];
+          const u2 = uids[j];
+          const m1 = tripMembers[u1] || {};
+          const m2 = tripMembers[u2] || {};
+          const n1 = m1.name || m1.displayName || m1.email || 'Member 1';
+          const n2 = m2.name || m2.displayName || m2.email || 'Member 2';
+
+          const expU2ForU1 = [];
+          let paidU2ForU1 = 0;
+
+          const expU1ForU2 = [];
+          let paidU1ForU2 = 0;
+
+          (cachedExpenses || []).forEach(exp => {
+            const amt = Number(exp.amount) || 0;
+            const splits = exp.splits || {};
+
+            if (exp.paidBy === u2 && splits[u1]) {
+              const s = Number(splits[u1]) || 0;
+              if (s > 0) {
+                expU2ForU1.push({ title: exp.title, date: exp.date, total: amt, share: s });
+                paidU2ForU1 += s;
+              }
+            }
+
+            if (exp.paidBy === u1 && splits[u2]) {
+              const s = Number(splits[u2]) || 0;
+              if (s > 0) {
+                expU1ForU2.push({ title: exp.title, date: exp.date, total: amt, share: s });
+                paidU1ForU2 += s;
+              }
+            }
+          });
+
+          const net = paidU2ForU1 - paidU1ForU2;
+          if (Math.abs(net) < 0.01 && expU2ForU1.length === 0 && expU1ForU2.length === 0) {
+            continue;
+          }
+
+          let debtorName = net >= 0 ? n1 : n2;
+          let creditorName = net >= 0 ? n2 : n1;
+          let netAbs = Math.abs(net);
+
+          const card = document.createElement('div');
+          card.className = 'print-breakdown-card';
+
+          let listItems1 = expU2ForU1.map(e => `<li>${e.title} (${formatDate(e.date)}) - Total ${formatCurrency(e.total, currency)} ➔ <strong>+${formatCurrency(e.share, currency)}</strong></li>`).join('');
+          let listItems2 = expU1ForU2.map(e => `<li>${e.title} (${formatDate(e.date)}) - Total ${formatCurrency(e.total, currency)} ➔ <strong>-${formatCurrency(e.share, currency)}</strong></li>`).join('');
+
+          card.innerHTML = `
+            <div style="font-weight:700;font-size:1rem;margin-bottom:0.4rem;color:#000;">
+              ${debtorName} pays ${creditorName}: ${formatCurrency(netAbs, currency)}
+            </div>
+            <div style="font-size:0.85rem;margin-bottom:0.5rem;line-height:1.5;color:#333;">
+              <div>• ${n2} paid for ${n1}: <strong>+${formatCurrency(paidU2ForU1, currency)}</strong></div>
+              <div>• Deduct ${n1} paid for ${n2}: <strong>-${formatCurrency(paidU1ForU2, currency)}</strong></div>
+              <div>• <strong>Direct Pairwise Net: ${formatCurrency(netAbs, currency)}</strong></div>
+            </div>
+            ${expU2ForU1.length > 0 ? `<div style="font-size:0.8rem;margin-top:0.4rem;color:#000;"><strong>Expenses paid by ${n2} (${n1}'s share):</strong><ul style="margin:0.2rem 0 0.4rem 1.2rem;padding:0;">${listItems1}</ul></div>` : ''}
+            ${expU1ForU2.length > 0 ? `<div style="font-size:0.8rem;margin-top:0.4rem;color:#000;"><strong>Expenses paid by ${n1} (${n2}'s share):</strong><ul style="margin:0.2rem 0 0.4rem 1.2rem;padding:0;">${listItems2}</ul></div>` : ''}
+          `;
+          container.appendChild(card);
+        }
       }
     }
 
     function printSummary() {
+      buildPrintBreakdown();
       window.print();
     }
   </script>

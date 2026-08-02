@@ -104,6 +104,9 @@
    DARK THEME
 ---------------------------------------------------------------- */
 [data-theme="dark"] {
+  --gradient:      linear-gradient(135deg, #872323 0%, #8C650A 100%);
+  --gradient-hover: linear-gradient(135deg, #6E1C1C 0%, #735308 100%);
+  --gradient-soft:  linear-gradient(135deg, rgba(135,35,35,.35) 0%, rgba(140,101,10,.35) 100%);
   --bg:          #1C1410;
   --bg-alt:      #231A13;
   --bg-card:     #2A1F18;
@@ -172,14 +175,28 @@ ul, ol { list-style: none; }
 ---------------------------------------------------------------- */
 .container {
   width: 100%;
-  max-width: 500px;
+  max-width: 720px;
   margin: 0 auto;
   padding: 0 var(--sp-4);
 }
 
+@media (min-width: 768px) {
+  .container {
+    max-width: 880px;
+    padding: 0 var(--sp-6);
+  }
+}
+
+@media (min-width: 1024px) {
+  .container {
+    max-width: 1040px;
+    padding: 0 var(--sp-8);
+  }
+}
+
 .container-wide {
   width: 100%;
-  max-width: 960px;
+  max-width: 1140px;
   margin: 0 auto;
   padding: 0 var(--sp-4);
 }
@@ -331,4 +348,74 @@ ul, ol { list-style: none; }
   .md\:grid-2    { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--sp-4); }
   .md\:grid-3    { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-4); }
   .md\:container { max-width: 960px; }
+}
+
+/* ----------------------------------------------------------------
+   PRINT / SAVE PDF STYLES
+---------------------------------------------------------------- */
+@media print {
+  header, nav, .app-bar, .bottom-nav, .fab, .tab-btn, .tabs, .modal-overlay,
+  .btn, button, .invite-section, .dashboard-controls, .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 11pt;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .container, .page-body, .trip-detail, .tab-panel {
+    max-width: 100% !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+  }
+
+  .tab-panel {
+    display: block !important;
+    page-break-inside: avoid;
+  }
+
+  .trip-hero {
+    background: #f8f9fa !important;
+    color: #000000 !important;
+    border: 1px solid #ccc !important;
+    border-radius: 8px !important;
+    padding: 1.5rem !important;
+    margin-bottom: 1.5rem !important;
+  }
+  .trip-hero * {
+    color: #000000 !important;
+  }
+
+  .card, .expense-item, .settle-card, .member-row {
+    border: 1px solid #ddd !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    page-break-inside: avoid;
+    margin-bottom: 0.5rem !important;
+  }
+
+  .print-breakdown-section {
+    display: block !important;
+    margin-top: 1.5rem !important;
+  }
+  .print-breakdown-card {
+    border: 1px solid #bbb !important;
+    border-radius: 8px !important;
+    padding: 1rem !important;
+    margin-bottom: 1rem !important;
+    page-break-inside: avoid;
+    background: #fafafa !important;
+  }
+}
+
+.print-breakdown-section {
+  display: none;
 }
