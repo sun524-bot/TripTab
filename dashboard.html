@@ -173,7 +173,6 @@
     <script>
         let currentUser = null;
         let unsubscribeTrips = null;
-        const db = firebase.firestore();
 
         firebase.auth().onAuthStateChanged((user) => {
             if (!user) {
