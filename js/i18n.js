@@ -185,10 +185,16 @@ const TRANSLATIONS = {
     emailOptionalLabel: 'Email (Optional)',
     addMemberBtn: 'Add Member',
     sendInvitationBtn: 'Send Invitation',
+    addMemberByEmailBtn: 'Add Member by Email',
+    emailAddressLabel: 'Email Address',
+    inviteEmailHint: 'If they already have an account they are added instantly. Otherwise they are added as a placeholder member.',
     copyTripInviteLinkBtn: 'Copy Trip Invite Link',
     addMemberTitle: 'Add Trip Member',
     addMemberOrVirtualName: '+ Add Member or Virtual Name',
     clickHereAssignName: 'Click here to assign a name or invite via email',
+    memberAddedSuccess: 'Member added to trip!',
+    memberAddedAsPlaceholder: '"{name}" added as placeholder member. You can log expenses under their name.',
+    errorAddingMember: 'Error adding member',
 
     // Expense item rendering
     paidByLabel: 'Paid by',
@@ -438,10 +444,16 @@ const TRANSLATIONS = {
     emailOptionalLabel: '电子邮箱（选填）',
     addMemberBtn: '添加成员',
     sendInvitationBtn: '发送邀请',
+    addMemberByEmailBtn: '通过邮箱添加成员',
+    emailAddressLabel: '电子邮箱地址',
+    inviteEmailHint: '如果对方已有账号将直接添加；否则将作为占位成员添加。',
     copyTripInviteLinkBtn: '复制行程邀请链接',
     addMemberTitle: '添加行程成员',
     addMemberOrVirtualName: '+ 添加成员或虚拟名称',
     clickHereAssignName: '点击此处指定名称或通过邮箱邀请',
+    memberAddedSuccess: '成员已加入行程！',
+    memberAddedAsPlaceholder: '「{name}」已作为占位成员添加，可以用其名字记录费用。',
+    errorAddingMember: '添加成员失败',
 
     // Expense item rendering
     paidByLabel: '付款人',
