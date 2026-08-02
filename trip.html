@@ -582,7 +582,7 @@
 
         // For placeholder members, show login hint below email
         const loginHint = isPlaceholder
-          ? `<div style="font-size:0.7rem;color:var(--coral);margin-top:2px;" data-i18n="noAccountHint">No account yet — admin must create login</div>`
+          ? `<div style="font-size:0.7rem;color:var(--coral);margin-top:2px;">${i18n.t('noAccountHint')}</div>`
           : '';
 
         row.innerHTML = `
