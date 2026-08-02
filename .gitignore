@@ -1,0 +1,13 @@
+# Dependencies
+node_modules/
+
+# Environment / Local settings
+.env
+.env.local
+*.log
+
+# OS / Editor generated
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

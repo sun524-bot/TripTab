@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>TripTab - Add Expense</title>
+  
+  <script src="js/theme.js"></script>
+  
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/pages.css">
+
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  
+  <script src="js/firebase-config.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/trips.js"></script>
+  <script src="js/expenses.js"></script>
+  <style>
+    .amount-hero {
+      background: linear-gradient(135deg, var(--coral), var(--gold));
+      color: white;
+      padding: 3rem 1rem;
+      text-align: center;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .amount-currency { font-size: 1.5rem; font-weight: bold; opacity: 0.9; }
+    .amount-input-display {
+      background: transparent;
+      border: none;
+      color: white;
+      font-size: 3rem;
+      font-weight: bold;
+      width: 150px;
+      text-align: left;
+    }
+    .amount-input-display:focus { outline: none; }
+    .amount-input-display::placeholder { color: rgba(255,255,255,0.6); }
+    
+    .category-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+    }
+    .category-chip {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.5rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .category-chip.active {
+      background: var(--coral-light, #ffeaea);
+      border-color: var(--coral);
+      color: var(--coral);
+    }
+    .paidby-select {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .paidby-chip {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+    }
+    .paidby-chip.active {
+      background: var(--gold);
+      color: #000;
+      border-color: var(--gold);
+    }
+    .split-selector {
+      display: flex;
+      background: var(--bg-body);
+      border-radius: 8px;
+      padding: 0.25rem;
+      margin-bottom: 1rem;
+    }
+    .split-btn {
+      flex: 1;
+      padding: 0.5rem;
+      text-align: center;
+      background: transparent;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .split-btn.active {
+      background: var(--bg-card);
+      font-weight: bold;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body>
+  <div class="add-expense-page">
+    <header class="app-bar">
+      <button class="icon-btn" onclick="goBack()" type="button" aria-label="Back">
+        <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+        </svg>
+      </button>
+      <span class="app-bar-title" id="page-title" data-i18n="addExpense">Add Expense</span>
+      <button class="icon-btn hidden text-danger" id="delete-btn" onclick="deleteExpense()" type="button" aria-label="Delete">
+        <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+        </svg>
+      </button>
+    </header>
+
+    <form class="add-expense-form" id="expense-form">
+      <!-- Amount Hero -->
+      <div class="amount-hero">
+        <div class="amount-currency">MYR</div>
+        <input type="number" class="amount-input-display" id="amount-input" placeholder="0.00" min="0" step="0.01" required/>
+      </div>
+
+      <!-- Title & Date -->
+      <div class="section-box container mt-4">
+        <div class="form-group">
+          <label class="form-label" data-i18n="expenseTitle">Title</label>
+          <input type="text" class="form-input" id="title-input" data-i18n-placeholder="expenseTitle" required/>
+        </div>
+        <div class="form-group mt-4">
+          <label class="form-label" data-i18n="date">Date</label>
+          <input type="date" class="form-input" id="date-input" required/>
+        </div>
+      </div>
+
+      <!-- Category -->
+      <div class="section-box container">
+        <div class="section-box-title" data-i18n="category">CATEGORY</div>
+        <div class="category-grid" id="category-grid">
+          <!-- rendered by JS -->
+        </div>
+      </div>
+
+      <!-- Paid By -->
+      <div class="section-box container">
+        <div class="section-box-title" data-i18n="paidBy">PAID BY</div>
+        <div class="paidby-select" id="paidby-select">
+          <!-- member chips rendered by JS -->
+        </div>
+      </div>
+
+      <!-- Split -->
+      <div class="section-box container">
+        <div class="section-box-title" data-i18n="splitWith">SPLIT WITH</div>
+        <div class="split-selector">
+          <button type="button" class="split-btn active" data-split="equal" data-i18n="equalSplit">Equal Split</button>
+          <button type="button" class="split-btn" data-split="custom" data-i18n="customSplit">Custom Amount</button>
+          <button type="button" class="split-btn" data-split="selective" data-i18n="selectiveSplit">Select People</button>
+        </div>
+        <div class="split-custom-list" id="split-details">
+          <!-- rendered based on split type -->
+        </div>
+      </div>
+
+      <!-- Notes -->
+      <div class="section-box container">
+        <div class="form-group">
+          <label class="form-label" data-i18n="notes">Notes</label>
+          <textarea class="form-textarea" id="notes-input" rows="2" placeholder="Optional notes..."></textarea>
+        </div>
+      </div>
+
+      <!-- Save button -->
+      <div class="container pb-6">
+        <button type="submit" class="btn btn-primary btn-full btn-lg" id="save-btn" data-i18n="saveExpense">Save Expense</button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    const tripId = getParam('tripId');
+    const expenseId = getParam('expenseId');
+    let currentUser = null;
+    let tripData = null;
+    let members = [];
+    let selectedCategory = 'food';
+    let selectedPayer = null;
+    let splitType = 'equal';
+    
+    const categories = [
+      { id: 'food', icon: '🍔', label: 'Food' },
+      { id: 'transport', icon: '🚗', label: 'Transport' },
+      { id: 'hotel', icon: '🏨', label: 'Hotel' },
+      { id: 'tickets', icon: '🎟️', label: 'Tickets' },
+      { id: 'shopping', icon: '🛍️', label: 'Shopping' },
+      { id: 'other', icon: '📦', label: 'Other' }
+    ];
+
+    if (!tripId) window.location.href = 'dashboard.html';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Set today's date
+      document.getElementById('date-input').valueAsDate = new Date();
+      
+      requireAuth(user => {
+        currentUser = user;
+        selectedPayer = user.uid;
+        loadForm();
+      });
+      i18n.init();
+      
+      setupCategoryGrid();
+      
+      document.querySelectorAll('.split-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          document.querySelectorAll('.split-btn').forEach(b => b.classList.remove('active'));
+          e.target.classList.add('active');
+          splitType = e.target.dataset.split;
+          renderSplitDetails();
+        });
+      });
+      
+      document.getElementById('expense-form').addEventListener('submit', handleSave);
+      document.getElementById('amount-input').addEventListener('input', renderSplitDetails);
+    });
+
+    function setupCategoryGrid() {
+      const grid = document.getElementById('category-grid');
+      categories.forEach(cat => {
+        const chip = document.createElement('div');
+        chip.className = `category-chip ${cat.id === selectedCategory ? 'active' : ''}`;
+        chip.innerHTML = `<div style="font-size:1.5rem">${cat.icon}</div><div style="font-size:0.75rem">${cat.label}</div>`;
+        chip.onclick = () => {
+          document.querySelectorAll('.category-chip').forEach(c => c.classList.remove('active'));
+          chip.classList.add('active');
+          selectedCategory = cat.id;
+        };
+        grid.appendChild(chip);
+      });
+    }
+
+    async function loadForm() {
+      // Load trip to get members
+      const tripDoc = await db.collection('trips').doc(tripId).get();
+      if (!tripDoc.exists) return goBack();
+      tripData = tripDoc.data();
+      
+      const memberMap = tripData.members || {};
+      members = Object.entries(memberMap).map(([id, m]) => ({
+        id,
+        displayName: m.name || m.displayName || m.email || 'Member',
+        email: m.email || ''
+      }));
+      
+      renderPayerSelect();
+      renderSplitDetails();
+      
+      if (expenseId) {
+        document.getElementById('page-title').textContent = 'Edit Expense';
+        document.getElementById('delete-btn').classList.remove('hidden');
+        
+        const expDoc = await db.collection('trips').doc(tripId).collection('expenses').doc(expenseId).get();
+        if (expDoc.exists) {
+          const exp = expDoc.data();
+          document.getElementById('amount-input').value = exp.amount;
+          document.getElementById('title-input').value = exp.title;
+          document.getElementById('date-input').value = exp.date;
+          document.getElementById('notes-input').value = exp.notes || '';
+          
+          selectedCategory = exp.category || 'other';
+          document.querySelectorAll('.category-chip').forEach((c, i) => {
+            if (categories[i].id === selectedCategory) {
+              c.click();
+            }
+          });
+          
+          selectedPayer = exp.paidBy;
+          renderPayerSelect();
+          // For simplicity in this demo, defaulting to equal split on edit unless complex logic implemented
+          renderSplitDetails(); 
+        }
+      }
+    }
+
+    function renderPayerSelect() {
+      const sel = document.getElementById('paidby-select');
+      sel.innerHTML = '';
+      members.forEach(m => {
+        const chip = document.createElement('div');
+        chip.className = `paidby-chip ${m.id === selectedPayer ? 'selected' : ''}`;
+        chip.textContent = m.displayName || m.email;
+        chip.onclick = () => {
+          selectedPayer = m.id;
+          renderPayerSelect();
+        };
+        sel.appendChild(chip);
+      });
+    }
+
+    function renderSplitDetails() {
+      const details = document.getElementById('split-details');
+      const amount = parseFloat(document.getElementById('amount-input').value) || 0;
+      details.innerHTML = '';
+      
+      if (splitType === 'equal') {
+        const perPerson = (amount / members.length).toFixed(2);
+        details.innerHTML = `<div class="text-center p-3 text-gray-500">Split equally among all ${members.length} members — RM ${perPerson} per person</div>`;
+      } else if (splitType === 'custom') {
+        members.forEach(m => {
+          const row = document.createElement('div');
+          row.className = 'flex justify-between items-center mb-2';
+          row.innerHTML = `
+            <span>${m.displayName}</span>
+            <input type="number" class="form-input w-24" placeholder="0.00" step="0.01" data-custom-split="${m.id}" />
+          `;
+          details.appendChild(row);
+        });
+      } else if (splitType === 'selective') {
+        members.forEach(m => {
+          const row = document.createElement('div');
+          row.className = 'flex justify-between items-center mb-2';
+          row.innerHTML = `
+            <span>${m.displayName}</span>
+            <input type="checkbox" checked data-sel-split="${m.id}" style="width:20px;height:20px;"/>
+          `;
+          details.appendChild(row);
+        });
+      }
+    }
+
+    async function handleSave(e) {
+      e.preventDefault();
+      const amount = parseFloat(document.getElementById('amount-input').value);
+      if (!amount || amount <= 0) return showToast('Enter a valid amount');
+      
+      const title = document.getElementById('title-input').value.trim();
+      const date = document.getElementById('date-input').value;
+      const notes = document.getElementById('notes-input').value.trim();
+      
+      // Compute splits
+      const splits = {};
+      if (splitType === 'equal') {
+        const amt = amount / members.length;
+        members.forEach(m => splits[m.id] = amt);
+      } else if (splitType === 'custom') {
+        let total = 0;
+        document.querySelectorAll('[data-custom-split]').forEach(input => {
+          const val = parseFloat(input.value) || 0;
+          splits[input.dataset.customSplit] = val;
+          total += val;
+        });
+        if (Math.abs(total - amount) > 0.1) {
+          return showToast('Custom amounts must equal total amount');
+        }
+      } else if (splitType === 'selective') {
+        const selected = Array.from(document.querySelectorAll('[data-sel-split]:checked')).map(cb => cb.dataset.selSplit);
+        if (selected.length === 0) return showToast('Select at least one person');
+        const amt = amount / selected.length;
+        selected.forEach(id => splits[id] = amt);
+      }
+
+      const expenseData = {
+        title,
+        amount,
+        date,
+        category: selectedCategory,
+        paidBy: selectedPayer,
+        notes,
+        splits,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+
+      try {
+        if (expenseId) {
+          await db.collection('trips').doc(tripId).collection('expenses').doc(expenseId).update(expenseData);
+          showToast('Expense updated');
+        } else {
+          expenseData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+          await db.collection('trips').doc(tripId).collection('expenses').add(expenseData);
+          showToast('Expense added');
+        }
+        goBack();
+      } catch (err) {
+        showToast('Error saving expense');
+        console.error(err);
+      }
+    }
+
+    async function deleteExpense() {
+      if (confirm('Delete this expense?')) {
+        await db.collection('trips').doc(tripId).collection('expenses').doc(expenseId).delete();
+        showToast('Expense deleted');
+        goBack();
+      }
+    }
+
+    function goBack() {
+      window.location.href = `trip.html?id=${tripId}`;
+    }
+  </script>
+</body>
+</html>

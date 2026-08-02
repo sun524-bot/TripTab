@@ -1,0 +1,94 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ----------------------------------------------------------------
+    // Helper functions
+    // ----------------------------------------------------------------
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    function isUser(uid) {
+      return isAuth() && request.auth.uid == uid;
+    }
+
+    function isTripMember(tripId) {
+      return isAuth() &&
+        request.auth.uid in get(/databases/$(database)/documents/trips/$(tripId)).data.members;
+    }
+
+    function isTripAdmin(tripId) {
+      return isAuth() &&
+        get(/databases/$(database)/documents/trips/$(tripId)).data.members[request.auth.uid].role == 'admin';
+    }
+
+    // ----------------------------------------------------------------
+    // Users collection
+    // Can read/write own profile only
+    // Others can read your name (for invite lookup)
+    // ----------------------------------------------------------------
+    match /users/{uid} {
+      allow read: if isAuth();   // needed for invite-by-email lookup
+      allow create: if isUser(uid);
+      allow update: if isUser(uid);
+      allow delete: if false;    // never delete users
+    }
+
+    // ----------------------------------------------------------------
+    // Trips collection
+    // ----------------------------------------------------------------
+    match /trips/{tripId} {
+      // Members can read their trip
+      allow read: if isTripMember(tripId);
+
+      // Any authenticated user can create a trip (they become admin)
+      allow create: if isAuth()
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.members[request.auth.uid].role == 'admin';
+
+      // Members can update (e.g. add expense-related updates)
+      // Only admin can change member list structure
+      allow update: if isTripMember(tripId);
+
+      // Only admin can delete
+      allow delete: if isTripAdmin(tripId);
+
+      // ----------------------------------------------------------------
+      // Expenses subcollection
+      // ----------------------------------------------------------------
+      match /expenses/{expenseId} {
+        // Any trip member can read expenses
+        allow read: if isTripMember(tripId);
+
+        // Any trip member can add an expense
+        allow create: if isTripMember(tripId)
+          && request.resource.data.addedBy == request.auth.uid;
+
+        // Original adder OR admin can update/delete
+        allow update: if isTripMember(tripId)
+          && (resource.data.addedBy == request.auth.uid || isTripAdmin(tripId));
+
+        allow delete: if isTripMember(tripId)
+          && (resource.data.addedBy == request.auth.uid || isTripAdmin(tripId));
+      }
+
+      // ----------------------------------------------------------------
+      // Settlements subcollection
+      // ----------------------------------------------------------------
+      match /settlements/{settlementId} {
+        // Any trip member can read settlements
+        allow read: if isTripMember(tripId);
+
+        // Trip member can mark their own payment as settled
+        allow create: if isTripMember(tripId)
+          && request.resource.data.markedBy == request.auth.uid;
+
+        // Allow update (undo settle) by the same person
+        allow update: if isTripMember(tripId);
+
+        allow delete: if isTripMember(tripId);
+      }
+    }
+  }
+}

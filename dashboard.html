@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TripTab - Dashboard</title>
+    <script src="js/theme.js"></script>
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/pages.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    
+    <script src="js/firebase-config.js"></script>
+    <script src="js/i18n.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/trips.js"></script>
+    <script src="js/expenses.js"></script>
+    <style>
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <!-- App bar -->
+        <header class="app-bar flex-row space-between p-3 align-center">
+            <div class="flex-row align-center gap-2">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="2" y="6" width="20" height="14" rx="3" fill="var(--coral)" fill-opacity="0.9"/>
+                    <rect x="2" y="6" width="20" height="6" rx="3" fill="var(--coral)" fill-opacity="0.4"/>
+                    <path d="M12 4L14.5 8.5H9.5L12 4Z" fill="var(--gold)" fill-opacity="0.9"/>
+                    <circle cx="7" cy="15" r="1.5" fill="rgba(255,255,255,0.6)"/>
+                </svg>
+                <h3 class="m-0">TripTab</h3>
+            </div>
+            <div class="flex-row gap-2">
+                <button id="theme-toggle" class="btn-icon">
+                    <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="5"/>
+                        <line x1="12" y1="1" x2="12" y2="3"/>
+                        <line x1="12" y1="21" x2="12" y2="23"/>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                        <line x1="1" y1="12" x2="3" y2="12"/>
+                        <line x1="21" y1="12" x2="23" y2="12"/>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <div class="page-body pb-20">
+            <!-- Greeting section -->
+            <div class="dashboard-header container mt-4 flex-row space-between align-center">
+                <div class="dashboard-greeting">
+                    <h2 class="m-0" id="user-greeting">Good afternoon, 👋</h2>
+                    <span class="text-muted" id="active-trips-count">0 active trips</span>
+                </div>
+                <div class="dashboard-controls">
+                    <button class="btn btn-primary btn-sm" onclick="openCreateTripModal()" data-i18n="createTripBtn">+ Create</button>
+                </div>
+            </div>
+
+            <!-- Section header -->
+            <div class="section-header container mt-5">
+                <h3 class="section-title m-0" data-i18n="myTrips">My Trips</h3>
+            </div>
+
+            <!-- Trip cards -->
+            <div class="trips-grid container mt-3" id="trips-container">
+                <!-- rendered by JS -->
+                <div class="text-center p-4">Loading trips...</div>
+            </div>
+
+            <!-- Empty state -->
+            <div class="empty-state hidden container mt-5 text-center flex-col align-center p-4" id="empty-state">
+                <div class="empty-state-icon" style="font-size: 48px;">🧳</div>
+                <h3 class="empty-state-title mt-3" data-i18n="noTrips">No trips yet</h3>
+                <p class="text-muted" data-i18n="noTripsHint">Create your first trip to start tracking expenses.</p>
+                <button class="btn btn-primary mt-3" onclick="openCreateTripModal()" data-i18n="createTrip">Create Trip</button>
+            </div>
+        </div>
+
+        <!-- Bottom Nav -->
+        <nav class="bottom-nav" id="bottom-nav">
+            <a href="dashboard.html" class="nav-item active" id="nav-home">
+                <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                    <polyline points="9 22 9 12 15 12 15 22"/>
+                </svg>
+                <span data-i18n="home">Home</span>
+            </a>
+            <div class="nav-add">
+                <button class="nav-add-btn" id="nav-add-btn" onclick="openCreateTripModal()">
+                    <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <line x1="12" y1="5" x2="12" y2="19"/>
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                </button>
+            </div>
+            <a href="profile.html" class="nav-item" id="nav-profile">
+                <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                </svg>
+                <span data-i18n="profile">Profile</span>
+            </a>
+        </nav>
+
+        <!-- Create Trip Modal (bottom sheet) -->
+        <div class="modal-overlay hidden" id="create-modal">
+            <div class="modal bottom-sheet">
+                <div class="modal-handle"></div>
+                <div class="flex-row space-between align-center mb-4">
+                    <h3 class="modal-title m-0" data-i18n="newTrip">New Trip</h3>
+                    <button class="btn-icon" onclick="closeCreateTripModal()">
+                        <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <form class="create-trip-form" id="create-trip-form">
+                    <div class="form-group">
+                        <label data-i18n="tripName">Trip Name</label>
+                        <input type="text" id="trip-name" class="form-input" required placeholder="e.g. Bali Summer 2024">
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="tripDescription">Description</label>
+                        <textarea id="trip-desc" class="form-input" rows="2" placeholder="Optional"></textarea>
+                    </div>
+                    <div class="flex-row gap-3">
+                        <div class="form-group flex-1">
+                            <label data-i18n="startDate">Start Date</label>
+                            <input type="date" id="trip-start" class="form-input" required>
+                        </div>
+                        <div class="form-group flex-1">
+                            <label data-i18n="endDate">End Date</label>
+                            <input type="date" id="trip-end" class="form-input" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="currency">Base Currency</label>
+                        <select id="trip-currency" class="form-input" required>
+                            <option value="USD">USD - US Dollar</option>
+                            <option value="EUR">EUR - Euro</option>
+                            <option value="MYR">MYR - Malaysian Ringgit</option>
+                            <option value="SGD">SGD - Singapore Dollar</option>
+                            <option value="JPY">JPY - Japanese Yen</option>
+                            <option value="THB">THB - Thai Baht</option>
+                            <option value="IDR">IDR - Indonesian Rupiah</option>
+                            <option value="AUD">AUD - Australian Dollar</option>
+                            <option value="GBP">GBP - British Pound</option>
+                            <option value="CNY">CNY - Chinese Yuan</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="inviteEmails">Invite Members (Emails)</label>
+                        <textarea id="trip-invites" class="form-input" rows="2" placeholder="Comma-separated emails (optional)"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-full mt-4" id="create-trip-btn">
+                        <span data-i18n="createTripAction">Create Trip</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let unsubscribeTrips = null;
+        const db = firebase.firestore();
+
+        firebase.auth().onAuthStateChanged((user) => {
+            if (!user) {
+                window.location.replace("login.html");
+                return;
+            }
+            currentUser = user;
+            loadDashboard(user);
+        });
+
+        function loadDashboard(user) {
+            const greetingText = i18n.t(greetingKey());
+            const userName = user.displayName || user.email.split('@')[0];
+            document.getElementById('user-greeting').innerText = `${greetingText}, ${userName} 👋`;
+            
+            if (unsubscribeTrips) unsubscribeTrips();
+            
+            const tripsContainer = document.getElementById('trips-container');
+            const emptyState = document.getElementById('empty-state');
+            
+            unsubscribeTrips = listenUserTrips(user.uid, user.email, (trips) => {
+                tripsContainer.innerHTML = '';
+                
+                if (!trips || trips.length === 0) {
+                    emptyState.classList.remove('hidden');
+                    document.getElementById('active-trips-count').innerText = `0 active trips`;
+                } else {
+                    emptyState.classList.add('hidden');
+                    document.getElementById('active-trips-count').innerText = `${trips.length} active trip${trips.length > 1 ? 's' : ''}`;
+                    
+                    trips.forEach((trip) => {
+                        const memberMap = trip.members || {};
+                        const memberList = Object.entries(memberMap);
+                        const netBal = trip.balance?.net || 0;
+                        const currency = trip.currency || 'MYR';
+                        
+                        let balClass = 'badge-neutral';
+                        let balText = i18n.t('settled');
+                        if (netBal > 0.01) {
+                            balClass = 'badge-green';
+                            balText = `${i18n.t('youAreOwed')} ${formatCurrency(netBal, currency)}`;
+                        } else if (netBal < -0.01) {
+                            balClass = 'badge-red';
+                            balText = `${i18n.t('youOwe')} ${formatCurrency(Math.abs(netBal), currency)}`;
+                        }
+                        
+                        const tripEl = document.createElement('div');
+                        tripEl.className = 'trip-card';
+                        tripEl.onclick = () => window.location.href = `trip.html?id=${trip.id}`;
+                        
+                        const avatarStackHtml = memberList.slice(0, 3).map(([uid, m]) => {
+                            const name = m.name || m.displayName || 'U';
+                            return `<div class="avatar avatar-xs" style="background:${avatarColor(uid)};border:2px solid var(--bg-card)" title="${name}">${getInitials(name)}</div>`;
+                        }).join('');
+                        
+                        const extraCount = memberList.length > 3 ? `<div class="avatar avatar-xs" style="background:var(--gray-500);color:#fff;border:2px solid var(--bg-card)">+${memberList.length - 3}</div>` : '';
+                        
+                        tripEl.innerHTML = `
+                            <div class="trip-card-header">
+                                <div>
+                                    <div class="trip-card-title">${trip.name}</div>
+                                    <div class="trip-card-dates">${formatDateRange(trip.startDate, trip.endDate)}</div>
+                                </div>
+                                <span class="badge ${balClass}">${balText}</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+                                <div class="avatar-stack">${avatarStackHtml}${extraCount}</div>
+                                <span style="font-size:var(--text-xs);color:var(--text-3)">${memberList.length} ${i18n.t('members').toLowerCase()}</span>
+                            </div>
+                        `;
+                        tripsContainer.appendChild(tripEl);
+                    });
+                }
+                i18n.applyAll();
+            });
+        }
+
+        const modal = document.getElementById('create-modal');
+        function openCreateTripModal() {
+            modal.classList.remove('hidden');
+        }
+        
+        function closeCreateTripModal() {
+            modal.classList.add('hidden');
+            document.getElementById('create-trip-form').reset();
+        }
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeCreateTripModal();
+        });
+
+        document.getElementById('create-trip-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('create-trip-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span>';
+            
+            try {
+                const name = document.getElementById('trip-name').value.trim();
+                const description = document.getElementById('trip-desc').value.trim();
+                const startDate = document.getElementById('trip-start').value;
+                const endDate = document.getElementById('trip-end').value;
+                const currency = document.getElementById('trip-currency').value;
+                const invitesRaw = document.getElementById('trip-invites').value;
+                
+                const tripId = await createTrip({
+                    name,
+                    description,
+                    startDate,
+                    endDate,
+                    currency,
+                    createdBy: currentUser.uid,
+                    creatorName: currentUser.displayName || currentUser.email.split('@')[0],
+                    creatorEmail: currentUser.email
+                });
+
+                // Handle initial invites if provided
+                if (invitesRaw) {
+                    const emails = invitesRaw.split(',').map(e => e.trim().toLowerCase()).filter(e => e);
+                    for (const email of emails) {
+                        await inviteMember(tripId, email);
+                    }
+                }
+                
+                closeCreateTripModal();
+                showToast(i18n.t('okTripCreated'), 'success');
+                window.location.href = `trip.html?id=${tripId}`;
+            } catch (error) {
+                showToast(i18n.t('errUnknown'), 'error');
+                console.error(error);
+                btn.disabled = false;
+                btn.innerHTML = i18n.t('createTripAction');
+            }
+        });
+
+        if (typeof theme !== 'undefined' && theme.init) theme.init();
+        if (typeof i18n !== 'undefined' && i18n.init) i18n.init();
+        
+        const themeToggle = document.getElementById('theme-toggle');
+        if (themeToggle && typeof theme !== 'undefined') {
+            themeToggle.addEventListener('click', () => theme.toggle());
+        }
+    </script>
+</body>
+</html>

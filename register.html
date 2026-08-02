@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TripTab - Register</title>
+    <script src="js/theme.js"></script>
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/pages.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    
+    <script src="js/firebase-config.js"></script>
+    <script src="js/i18n.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/trips.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        firebase.auth().onAuthStateChanged((user) => {
+            if (user) {
+                window.location.replace("dashboard.html");
+            }
+        });
+    </script>
+</head>
+<body class="auth-page">
+    <div class="auth-hero">
+        <div class="auth-hero-content">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="2" y="6" width="20" height="14" rx="3" fill="white" fill-opacity="0.9"/>
+                <rect x="2" y="6" width="20" height="6" rx="3" fill="white" fill-opacity="0.4"/>
+                <path d="M12 4L14.5 8.5H9.5L12 4Z" fill="white" fill-opacity="0.9"/>
+                <circle cx="7" cy="15" r="1.5" fill="rgba(255,107,107,0.6)"/>
+            </svg>
+            <h1>TripTab</h1>
+            <p data-i18n="registerTagline">Join the easiest way to split travel costs</p>
+        </div>
+    </div>
+    <div class="auth-card">
+        <h2 data-i18n="registerTitle">Create Account</h2>
+        <div id="error-message" class="error-text hidden"></div>
+        <form id="register-form">
+            <div class="form-group">
+                <label for="name" data-i18n="nameLabel">Full Name</label>
+                <input type="text" id="name" class="form-input" required>
+            </div>
+            <div class="form-group">
+                <label for="email" data-i18n="emailLabel">Email</label>
+                <input type="email" id="email" class="form-input" required>
+            </div>
+            <div class="form-group">
+                <label for="password" data-i18n="passwordLabel">Password</label>
+                <input type="password" id="password" class="form-input" required minlength="6">
+            </div>
+            <div class="form-group">
+                <label for="confirm-password" data-i18n="confirmPasswordLabel">Confirm Password</label>
+                <input type="password" id="confirm-password" class="form-input" required minlength="6">
+            </div>
+            <button type="submit" class="btn btn-primary btn-full mt-4" id="submit-btn">
+                <span data-i18n="registerBtn">Sign Up</span>
+            </button>
+        </form>
+        <div class="auth-footer">
+            <span data-i18n="alreadyAccount">Already have an account?</span>
+            <a href="login.html" data-i18n="loginLink">Sign in</a>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('register-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+            const errorMsg = document.getElementById('error-message');
+            const submitBtn = document.getElementById('submit-btn');
+            
+            errorMsg.classList.add('hidden');
+            
+            if (password !== confirmPassword) {
+                errorMsg.textContent = "Passwords do not match";
+                errorMsg.classList.remove('hidden');
+                return;
+            }
+            
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-small"></span>';
+
+            try {
+                if (typeof registerUser === 'function') {
+                    await registerUser(name, email, password);
+                } else {
+                    const cred = await firebase.auth().createUserWithEmailAndPassword(email, password);
+                    await cred.user.updateProfile({ displayName: name });
+                    // Also save to firestore users collection in a real implementation
+                }
+                window.location.replace("dashboard.html");
+            } catch (error) {
+                errorMsg.textContent = error.message;
+                errorMsg.classList.remove('hidden');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<span data-i18n="registerBtn">Sign Up</span>';
+            }
+        });
+    </script>
+</body>
+</html>

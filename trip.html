@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>TripTab - Trip Details</title>
+  
+  <script src="js/theme.js"></script>
+  
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/pages.css">
+
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  
+  <script src="js/firebase-config.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/trips.js"></script>
+  <script src="js/expenses.js"></script>
+</head>
+<body>
+  <div class="trip-detail">
+    <!-- App bar -->
+    <header class="app-bar">
+      <button class="btn-icon" onclick="window.location.href='dashboard.html'" aria-label="Back">
+        <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+        </svg>
+      </button>
+      <span class="app-bar-title" id="trip-name">Loading...</span>
+      <div class="app-bar-actions">
+        <button class="icon-btn" onclick="theme.toggle()" aria-label="Toggle Theme">
+          <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+        </button>
+        <button class="icon-btn" onclick="toggleTripMenu()" aria-label="More Options">
+          <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Trip hero -->
+    <div class="trip-hero">
+      <div class="trip-hero-name" id="hero-name"></div>
+      <div class="trip-hero-dates" id="hero-dates"></div>
+      <div class="trip-hero-stats">
+        <div class="trip-stat">
+          <div class="trip-stat-value" id="stat-total">RM 0</div>
+          <div class="trip-stat-label" data-i18n="tripTotal">Trip Total</div>
+        </div>
+        <div class="trip-stat">
+          <div class="trip-stat-value" id="stat-balance">RM 0</div>
+          <div class="trip-stat-label" data-i18n="yourBalance">Your Balance</div>
+        </div>
+        <div class="trip-stat">
+          <div class="trip-stat-value" id="stat-members">0</div>
+          <div class="trip-stat-label" data-i18n="members">Members</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="trip-tabs-sticky">
+      <div class="tabs container">
+        <button class="tab-btn active" data-tab="expenses" onclick="switchTab('expenses')" data-i18n="expenses">Expenses</button>
+        <button class="tab-btn" data-tab="members" onclick="switchTab('members')" data-i18n="members">Members</button>
+        <button class="tab-btn" data-tab="settle" onclick="switchTab('settle')" data-i18n="settle">Settle</button>
+      </div>
+    </div>
+
+    <!-- Tab panels -->
+    <!-- EXPENSES TAB -->
+    <div id="tab-expenses" class="tab-panel active container">
+      <div class="expense-list" id="expense-list"></div>
+      <div class="empty-state hidden" id="expenses-empty">
+        <div class="empty-state-icon">🧾</div>
+        <div class="empty-state-title" data-i18n="noExpensesYet">No expenses yet</div>
+        <p data-i18n="tapToAddExpense">Tap + to add the first expense</p>
+      </div>
+    </div>
+
+    <!-- MEMBERS TAB -->
+    <div id="tab-members" class="tab-panel hidden container">
+      <div class="members-list" id="members-list"></div>
+      <!-- Invite section -->
+      <div class="invite-section hidden" id="invite-section">
+        <div class="section-title" data-i18n="inviteMembers">Invite Members</div>
+        <div class="invite-row">
+          <input type="email" class="form-input" id="invite-email" data-i18n-placeholder="inviteByEmail" placeholder="Email address"/>
+          <button class="btn btn-primary" id="invite-btn" onclick="handleInvite()" data-i18n="sendInvite">Send</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTLE TAB -->
+    <div id="tab-settle" class="tab-panel hidden container">
+      <div class="settle-panel">
+        <div class="settle-summary" id="settle-summary">
+          <div class="settle-summary-emoji">⏳</div>
+          <div class="settle-summary-title" data-i18n="calculating">Calculating...</div>
+        </div>
+        <div class="settle-list" id="settle-list"></div>
+        <div class="balances-section mt-4">
+          <div class="balances-title" data-i18n="netBalance">Net Balance</div>
+          <div class="balance-rows" id="balance-rows"></div>
+        </div>
+        <div style="padding:1rem;margin-top:1rem">
+          <button class="btn btn-secondary btn-full" onclick="printSummary()">
+            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="margin-right: 8px;">
+              <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>
+            </svg>
+            <span data-i18n="printSummary">Print / Save PDF</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- FAB Add expense -->
+    <button class="fab" id="fab-add" onclick="goToAddExpense()">
+      <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+    </button>
+
+    <!-- Bottom Nav -->
+    <nav class="bottom-nav">
+      <a href="index.html" class="nav-item">
+        <div class="nav-icon">✈️</div>
+        <span data-i18n="myTrips">Trips</span>
+      </a>
+      <a href="profile.html" class="nav-item">
+        <div class="nav-icon">👤</div>
+        <span data-i18n="profile">Profile</span>
+      </a>
+    </nav>
+  </div>
+
+  <script>
+    const tripId = getParam('id');
+    let currentTrip = null;
+    let currentUser = null;
+    let tripMembers = {};
+
+    if (!tripId) {
+      window.location.href = 'index.html';
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      requireAuth(user => {
+        currentUser = user;
+        loadTrip(user);
+        listenTripExpenses();
+      });
+      i18n.init();
+    });
+
+    function loadTrip(user) {
+      db.collection('trips').doc(tripId).onSnapshot(doc => {
+        if (!doc.exists) {
+          showToast('Trip not found');
+          window.location.href = 'dashboard.html';
+          return;
+        }
+        currentTrip = { id: doc.id, ...doc.data() };
+        tripMembers = currentTrip.members || {};
+
+        document.getElementById('trip-name').textContent = currentTrip.name || 'Trip';
+        document.getElementById('hero-name').textContent = currentTrip.name || 'Trip';
+        document.title = `TripTab - ${currentTrip.name || 'Trip'}`;
+        if (currentTrip.startDate && currentTrip.endDate) {
+          document.getElementById('hero-dates').textContent = formatDateRange(currentTrip.startDate, currentTrip.endDate);
+        }
+
+        const memberMap = currentTrip.members || {};
+        document.getElementById('stat-members').textContent = Object.keys(memberMap).length;
+
+        // isAdmin: check members map role field
+        const isAdmin = memberMap[user.uid]?.role === 'admin';
+        if (isAdmin) {
+          document.getElementById('invite-section').classList.remove('hidden');
+        }
+
+        loadMembers(memberMap, isAdmin);
+      });
+    }
+
+    function listenTripExpenses() {
+      db.collection('trips').doc(tripId).collection('expenses')
+        .orderBy('date', 'desc')
+        .onSnapshot(snapshot => {
+          const expenses = [];
+          let total = 0;
+          let userBalance = 0;
+          
+          snapshot.forEach(doc => {
+            const exp = { id: doc.id, ...doc.data() };
+            expenses.push(exp);
+            total += exp.amount;
+            
+            // Calc user balance loosely
+            if (exp.paidBy === currentUser.uid) {
+              userBalance += exp.amount;
+            }
+            if (exp.splits && exp.splits[currentUser.uid]) {
+              userBalance -= exp.splits[currentUser.uid];
+            }
+          });
+          
+          document.getElementById('stat-total').textContent = `RM ${total.toFixed(2)}`;
+          document.getElementById('stat-balance').textContent = `RM ${userBalance.toFixed(2)}`;
+          
+          renderExpenses(expenses);
+          
+          // trigger settlement recalculation
+          calculateSettlements(expenses);
+        });
+    }
+
+    function renderExpenses(expenses) {
+      const list = document.getElementById('expense-list');
+      const empty = document.getElementById('expenses-empty');
+      list.innerHTML = '';
+      
+      if (expenses.length === 0) {
+        empty.classList.remove('hidden');
+        return;
+      }
+      empty.classList.add('hidden');
+      
+      let currentDate = '';
+      expenses.forEach(exp => {
+        if (exp.date !== currentDate) {
+          currentDate = exp.date;
+          const dateHeader = document.createElement('div');
+          dateHeader.className = 'expense-date-header';
+          dateHeader.textContent = formatDate(currentDate);
+          list.appendChild(dateHeader);
+        }
+        
+        const item = document.createElement('div');
+        item.className = 'expense-item card mb-2';
+        item.onclick = () => window.location.href = `add-expense.html?tripId=${tripId}&expenseId=${exp.id}`;
+        
+        const mySplit = exp.splits && exp.splits[currentUser.uid] ? exp.splits[currentUser.uid] : 0;
+        
+        item.innerHTML = `
+          <div class="flex justify-between items-center">
+            <div>
+              <div class="font-bold">${exp.title}</div>
+              <div class="text-sm text-gray-500">Paid by ${tripMembers[exp.paidBy]?.displayName || 'Someone'}</div>
+            </div>
+            <div class="text-right">
+              <div class="font-bold text-coral">RM ${exp.amount.toFixed(2)}</div>
+              ${mySplit > 0 ? `<div class="text-xs text-gray-500">You owe RM ${mySplit.toFixed(2)}</div>` : ''}
+            </div>
+          </div>
+        `;
+        list.appendChild(item);
+      });
+    }
+
+    function loadMembers(memberMap, isAdmin) {
+      const list = document.getElementById('members-list');
+      list.innerHTML = '';
+
+      Object.entries(memberMap).forEach(([uid, memberData]) => {
+        const name = memberData.name || memberData.displayName || 'Unknown';
+        const email = memberData.email || '';
+        const role = memberData.role || 'member';
+        const isMe = uid === currentUser.uid;
+
+        const row = document.createElement('div');
+        row.className = 'member-row';
+
+        const avatarEl = createAvatarEl(name, uid, 'avatar-sm');
+        avatarEl.style.background = avatarColor(uid);
+
+        let removeBtn = '';
+        if (isAdmin && !isMe) {
+          removeBtn = `<button class="btn btn-sm btn-danger" onclick="handleRemoveMember('${uid}', '${name}')" style="margin-left:auto">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/></svg>
+          </button>`;
+        }
+
+        row.innerHTML = `
+          <div style="display:flex;align-items:center;gap:12px;flex:1">
+            <div class="avatar avatar-sm" style="background:${avatarColor(uid)};flex-shrink:0">${getInitials(name)}</div>
+            <div class="member-info">
+              <div class="member-name">${name}${isMe ? ' (You)' : ''}</div>
+              <div class="member-email">${email}</div>
+            </div>
+            <span class="member-role">${role}</span>
+          </div>
+          ${removeBtn}
+        `;
+        list.appendChild(row);
+      });
+    }
+
+    async function handleInvite() {
+      const emailInput = document.getElementById('invite-email');
+      const btn = document.getElementById('invite-btn');
+      const email = emailInput.value.trim().toLowerCase();
+      if (!email) return;
+      setLoading(btn, true);
+      try {
+        const result = await inviteMember(tripId, email);
+        if (result.found) {
+          showToast(i18n.t('okInviteSent'), 'success');
+        } else {
+          showToast(i18n.t('okInviteSent') + ' (pending signup)', 'success');
+        }
+        emailInput.value = '';
+      } catch (e) {
+        showToast(i18n.t('errUnknown'), 'error');
+      } finally {
+        setLoading(btn, false);
+      }
+    }
+
+    function handleRemoveMember(uid, name) {
+      showConfirm({
+        title: i18n.t('kickMember'),
+        message: `${i18n.t('confirmKick')} ${i18n.t('cannotUndo')}`,
+        confirmLabel: i18n.t('removeMember'),
+        confirmClass: 'btn-danger',
+        onConfirm: async () => {
+          try {
+            await removeMember(tripId, uid);
+            showToast('Member removed', 'success');
+          } catch(e) {
+            showToast(i18n.t('errUnknown'), 'error');
+          }
+        }
+      });
+    }
+
+    function calculateSettlements(expenses) {
+      const balances = {};
+      
+      expenses.forEach(exp => {
+        const payer = exp.paidBy;
+        if (!balances[payer]) balances[payer] = 0;
+        balances[payer] += exp.amount;
+        
+        if (exp.splits) {
+          Object.keys(exp.splits).forEach(user => {
+            if (!balances[user]) balances[user] = 0;
+            balances[user] -= exp.splits[user];
+          });
+        }
+      });
+      
+      renderSettlement(balances);
+    }
+    
+    function renderSettlement(balances) {
+      const summary = document.getElementById('settle-summary');
+      const list = document.getElementById('settle-list');
+      const bRows = document.getElementById('balance-rows');
+      
+      list.innerHTML = '';
+      bRows.innerHTML = '';
+      
+      let debtors = [];
+      let creditors = [];
+      
+      Object.keys(balances).forEach(uid => {
+        const b = balances[uid];
+        const name = tripMembers[uid]?.displayName || 'Unknown';
+        
+        const row = document.createElement('div');
+        row.className = 'flex justify-between items-center py-2 border-b';
+        row.innerHTML = `
+          <span>${name}</span>
+          <span class="${b >= 0 ? 'text-success' : 'text-danger'} font-bold">
+            ${b >= 0 ? '+' : ''}RM ${b.toFixed(2)}
+          </span>
+        `;
+        bRows.appendChild(row);
+        
+        if (b < -0.01) debtors.push({uid, amount: -b});
+        if (b > 0.01) creditors.push({uid, amount: b});
+      });
+      
+      summary.innerHTML = `<div class="settle-summary-emoji">💸</div><div class="settle-summary-title">Balances calculated</div>`;
+      
+      // Greedy settlement
+      let transactions = [];
+      let i = 0, j = 0;
+      
+      while(i < debtors.length && j < creditors.length) {
+        let debtor = debtors[i];
+        let creditor = creditors[j];
+        
+        let amount = Math.min(debtor.amount, creditor.amount);
+        
+        transactions.push({
+          from: debtor.uid,
+          to: creditor.uid,
+          amount: amount
+        });
+        
+        debtor.amount -= amount;
+        creditor.amount -= amount;
+        
+        if (debtor.amount < 0.01) i++;
+        if (creditor.amount < 0.01) j++;
+      }
+      
+      if (transactions.length === 0) {
+        summary.innerHTML = '<div class="settle-summary-emoji">🎉</div><div class="settle-summary-title" data-i18n="allSettled">All settled up!</div><div class="settle-summary-sub" data-i18n="allSettledHint">No payments needed.</div>';
+        i18n.applyAll();
+        return;
+      }
+
+      summary.innerHTML = `<div class="settle-summary-emoji">💸</div><div class="settle-summary-title">${transactions.length} payment(s) needed</div>`;
+
+      transactions.forEach(t => {
+        const fromData = tripMembers[t.from] || {};
+        const toData   = tripMembers[t.to]   || {};
+        const fromName = fromData.name || fromData.displayName || 'Unknown';
+        const toName   = toData.name   || toData.displayName   || 'Unknown';
+        const currency = currentTrip?.currency || 'MYR';
+
+        const el = document.createElement('div');
+        el.className = 'settle-card';
+        el.innerHTML = `
+          <div class="avatar avatar-sm" style="background:${avatarColor(t.from)}">${getInitials(fromName)}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:.875rem;font-weight:600;color:var(--text-1)">${fromName}</div>
+            <div style="font-size:.75rem;color:var(--text-3)">${i18n.t('pays')} ${toName}</div>
+          </div>
+          <div class="settle-amount">${formatCurrency(t.amount, currency)}</div>
+          <div class="avatar avatar-sm" style="background:${avatarColor(t.to)}">${getInitials(toName)}</div>
+        `;
+        list.appendChild(el);
+      });
+    }
+
+    function markSettled(from, to, amount) {
+      showToast('Settlement feature coming soon!');
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+      
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+      document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+    }
+
+    function goToAddExpense() {
+      window.location.href = `add-expense.html?tripId=${tripId}`;
+    }
+
+    function toggleTripMenu() {
+      if (confirm('Delete this trip?')) {
+        db.collection('trips').doc(tripId).delete().then(() => {
+          window.location.href = 'index.html';
+        });
+      }
+    }
+
+    function printSummary() {
+      window.print();
+    }
+  </script>
+</body>
+</html>

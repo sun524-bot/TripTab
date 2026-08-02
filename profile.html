@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>TripTab - Profile</title>
+  
+  <script src="js/theme.js"></script>
+  
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/pages.css">
+
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  
+  <script src="js/firebase-config.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/utils.js"></script>
+</head>
+<body>
+  <div class="profile-page pb-20">
+    <!-- Gradient hero -->
+    <div class="profile-hero">
+      <div class="profile-avatar-large" id="profile-avatar">?</div>
+      <div class="profile-name" id="profile-name">Loading...</div>
+      <div class="profile-email" id="profile-email"></div>
+    </div>
+
+    <div class="profile-body container mt-[-30px] relative z-10">
+      <!-- Stats row -->
+      <div class="flex gap-4 mb-6" style="text-align:center">
+        <div class="flex-1 card shadow-md">
+          <div style="font-size:1.5rem;font-weight:700" id="stat-trips">0</div>
+          <div style="font-size:.75rem;color:var(--text-3)" data-i18n="myTrips">Trips</div>
+        </div>
+        <div class="flex-1 card shadow-md">
+          <div style="font-size:1.5rem;font-weight:700" id="stat-expenses">0</div>
+          <div style="font-size:.75rem;color:var(--text-3)" data-i18n="expenses">Expenses</div>
+        </div>
+      </div>
+
+      <!-- Account settings -->
+      <div class="settings-section">
+        <div class="settings-title" data-i18n="account">ACCOUNT</div>
+        <div class="settings-row card p-4 mb-2 flex justify-between items-center cursor-pointer" onclick="openEditName()">
+          <div class="flex items-center gap-3">
+            <div class="settings-row-icon text-coral">
+              <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              </svg>
+            </div>
+            <div class="settings-row-label font-medium" data-i18n="editProfile">Edit Name</div>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="settings-row-value text-gray-500 text-sm" id="name-display"></div>
+            <span class="text-gray-400">›</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Appearance settings -->
+      <div class="settings-section mt-6">
+        <div class="settings-title" data-i18n="appearance">APPEARANCE</div>
+        <div class="settings-row card p-4 mb-2 flex justify-between items-center cursor-pointer" onclick="handleThemeToggle()" id="theme-row">
+          <div class="flex items-center gap-3">
+            <div class="settings-row-icon text-gold" id="theme-icon">
+              <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+              </svg>
+            </div>
+            <div class="settings-row-label font-medium" data-i18n="themeToggle">Theme</div>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="settings-row-value text-gray-500 text-sm" id="theme-value">Light</div>
+            <span class="text-gray-400">›</span>
+          </div>
+        </div>
+        <div class="settings-row card p-4 mb-2 flex justify-between items-center cursor-pointer" onclick="handleLangToggle()" id="lang-row">
+          <div class="flex items-center gap-3">
+            <div class="settings-row-icon text-coral">
+              <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+              </svg>
+            </div>
+            <div class="settings-row-label font-medium" data-i18n="language">Language</div>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="settings-row-value text-gray-500 text-sm" id="lang-value">EN</div>
+            <span class="text-gray-400">›</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- About -->
+      <div class="settings-section mt-6">
+        <div class="settings-title">ABOUT</div>
+        <div class="settings-row card p-4 mb-2 flex justify-between items-center">
+          <div class="flex items-center gap-3">
+            <div class="settings-row-icon text-gold">🧳</div>
+            <div class="settings-row-label font-medium" data-i18n="about">About TripTab</div>
+          </div>
+          <div class="settings-row-value text-gray-500 text-sm" data-i18n="version">Version 1.0</div>
+        </div>
+      </div>
+
+      <!-- Sign out -->
+      <div class="settings-section mt-6">
+        <div class="settings-row card p-4 flex justify-between items-center cursor-pointer" onclick="handleSignOut()">
+          <div class="flex items-center gap-3">
+            <div class="settings-row-icon text-danger">
+              <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+              </svg>
+            </div>
+            <div class="settings-row-label font-medium text-danger" data-i18n="logout">Sign Out</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Nav -->
+    <nav class="bottom-nav">
+      <a href="dashboard.html" class="nav-item">
+        <div class="nav-icon">✈️</div>
+        <span data-i18n="myTrips">Trips</span>
+      </a>
+      <a href="profile.html" class="nav-item active">
+        <div class="nav-icon">👤</div>
+        <span data-i18n="profile">Profile</span>
+      </a>
+    </nav>
+
+    <!-- Edit name modal -->
+    <div class="modal-overlay hidden" id="edit-name-modal">
+      <div class="modal card w-full max-w-sm m-4 p-6 relative">
+        <div class="modal-handle"></div>
+        <div class="modal-title text-xl font-bold mb-4" data-i18n="editProfile">Edit Profile</div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="displayName">Your Name</label>
+          <input type="text" class="form-input mt-2" id="new-name-input"/>
+        </div>
+        <div class="flex gap-3 mt-6">
+          <button class="btn btn-outline flex-1" onclick="closeEditName()" data-i18n="cancel">Cancel</button>
+          <button class="btn btn-primary flex-1" id="save-name-btn" onclick="saveName()" data-i18n="save">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentUser = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      requireAuth(user => {
+        currentUser = user;
+        loadProfile(user);
+        loadStats(user);
+      });
+      i18n.init();
+      updateThemeDisplay();
+      updateLangDisplay();
+    });
+
+    function loadProfile(user) {
+      const name = user.displayName || 'Traveler';
+      document.getElementById('profile-name').textContent = name;
+      document.getElementById('profile-email').textContent = user.email;
+      document.getElementById('profile-avatar').textContent = getInitials(name);
+      document.getElementById('name-display').textContent = name;
+      document.getElementById('new-name-input').value = name;
+    }
+
+    async function loadStats(user) {
+      const tripsSnap = await db.collection('trips').where('memberUids', 'array-contains', user.uid).get();
+      document.getElementById('stat-trips').textContent = tripsSnap.size;
+      
+      let expCount = 0;
+      for (const tripDoc of tripsSnap.docs) {
+        const expSnap = await db.collection('trips').doc(tripDoc.id).collection('expenses').where('paidBy', '==', user.uid).get();
+        expCount += expSnap.size;
+      }
+      document.getElementById('stat-expenses').textContent = expCount;
+    }
+
+    function openEditName() {
+      document.getElementById('edit-name-modal').classList.remove('hidden');
+    }
+
+    function closeEditName() {
+      document.getElementById('edit-name-modal').classList.add('hidden');
+    }
+
+    async function saveName() {
+      const newName = document.getElementById('new-name-input').value.trim();
+      if (!newName) return;
+      
+      const btn = document.getElementById('save-name-btn');
+      btn.disabled = true;
+      btn.textContent = 'Saving...';
+      
+      try {
+        await currentUser.updateProfile({ displayName: newName });
+        await db.collection('users').doc(currentUser.uid).update({ displayName: newName });
+        showToast('Profile updated');
+        loadProfile(currentUser);
+        closeEditName();
+      } catch (e) {
+        showToast('Error updating profile', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = i18n.t('save');
+      }
+    }
+
+    function handleThemeToggle() {
+      theme.toggle();
+      updateThemeDisplay();
+    }
+    
+    function updateThemeDisplay() {
+      const isDark = theme.mode === 'dark';
+      document.getElementById('theme-value').textContent = isDark ? i18n.t('darkMode') : i18n.t('lightMode');
+      document.getElementById('theme-icon').innerHTML = isDark ? 
+        `<svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>` : 
+        `<svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`;
+    }
+
+    function handleLangToggle() {
+      i18n.toggle();
+      updateLangDisplay();
+    }
+    
+    function updateLangDisplay() {
+      document.getElementById('lang-value').textContent = i18n.lang === 'zh' ? '中文' : 'EN';
+    }
+
+    function handleSignOut() {
+      if (confirm('Are you sure you want to sign out?')) {
+        auth.signOut().then(() => {
+          window.location.href = 'login.html';
+        });
+      }
+    }
+  </script>
+</body>
+</html>

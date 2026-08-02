@@ -1,0 +1,334 @@
+/* ================================================================
+   TripTab — Base CSS Design System
+   Theme: Sunset Voyage (Coral + Gold, Light & Dark)
+   ================================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
+
+/* ----------------------------------------------------------------
+   DESIGN TOKENS
+---------------------------------------------------------------- */
+:root {
+  /* Accent — same for both themes */
+  --coral:        #FF6B6B;
+  --coral-dark:   #E05555;
+  --coral-light:  #FF8E8E;
+  --gold:         #FFD93D;
+  --gold-dark:    #E6C234;
+  --gold-light:   #FFE570;
+  --gradient:            linear-gradient(135deg, #FF6B6B 0%, #FFD93D 100%);
+  --gradient-hover:      linear-gradient(135deg, #E05555 0%, #E6C234 100%);
+  --gradient-soft:       linear-gradient(135deg, rgba(255,107,107,.12) 0%, rgba(255,217,61,.12) 100%);
+
+  /* Status */
+  --success:  #10B981;
+  --danger:   #EF4444;
+  --warning:  #F59E0B;
+  --info:     #3B82F6;
+
+  /* Typography */
+  --font: 'Inter', 'Noto Sans SC', -apple-system, sans-serif;
+  --text-xs:   .75rem;
+  --text-sm:   .875rem;
+  --text-base: 1rem;
+  --text-lg:   1.125rem;
+  --text-xl:   1.25rem;
+  --text-2xl:  1.5rem;
+  --text-3xl:  1.875rem;
+  --text-4xl:  2.25rem;
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-semi:   600;
+  --weight-bold:   700;
+
+  /* Spacing */
+  --sp-1: .25rem;  --sp-2: .5rem;   --sp-3: .75rem;
+  --sp-4: 1rem;    --sp-5: 1.25rem; --sp-6: 1.5rem;
+  --sp-8: 2rem;    --sp-10: 2.5rem; --sp-12: 3rem;
+  --sp-16: 4rem;
+
+  /* Border radius */
+  --r-xs:   6px;
+  --r-sm:   10px;
+  --r-md:   14px;
+  --r-lg:   18px;
+  --r-xl:   24px;
+  --r-2xl:  32px;
+  --r-full: 9999px;
+
+  /* Transitions */
+  --t-fast: all .15s ease;
+  --t-base: all .2s ease;
+  --t-slow: all .35s ease;
+
+  /* Z-index layers */
+  --z-base:  1;
+  --z-nav:   100;
+  --z-modal: 200;
+  --z-toast: 300;
+}
+
+/* ----------------------------------------------------------------
+   LIGHT THEME
+---------------------------------------------------------------- */
+:root,
+[data-theme="light"] {
+  --bg:          #FFF8F0;
+  --bg-alt:      #FFF0E4;
+  --bg-card:     #FFFFFF;
+  --bg-card-2:   #FFFAF5;
+  --bg-input:    #FFFFFF;
+  --bg-hover:    #FFF5EE;
+  --border:      #FFE4D6;
+  --border-2:    #FFD0BA;
+  --text-1:      #1A1A2E;
+  --text-2:      #4B4B6A;
+  --text-3:      #6B7280;
+  --text-4:      #9CA3AF;
+  --text-inv:    #FFFFFF;
+  --shadow-sm:   0 2px 8px  rgba(255,107,107,.08);
+  --shadow-md:   0 4px 16px rgba(255,107,107,.12);
+  --shadow-lg:   0 8px 32px rgba(255,107,107,.18);
+  --shadow-xl:   0 16px 48px rgba(255,107,107,.22);
+  --nav-bg:      rgba(255,255,255,.92);
+  --glass:       rgba(255,255,255,.65);
+  --glass-border:rgba(255,107,107,.18);
+  --overlay:     rgba(26,26,46,.5);
+  --coral-a:     rgba(255,107,107,.1);
+  --gold-a:      rgba(255,217,61,.15);
+  --badge-green: rgba(16,185,129,.1);
+  --badge-red:   rgba(239,68,68,.1);
+}
+
+/* ----------------------------------------------------------------
+   DARK THEME
+---------------------------------------------------------------- */
+[data-theme="dark"] {
+  --bg:          #1C1410;
+  --bg-alt:      #231A13;
+  --bg-card:     #2A1F18;
+  --bg-card-2:   #312419;
+  --bg-input:    #2A1F18;
+  --bg-hover:    #312419;
+  --border:      #3D2B20;
+  --border-2:    #4A3428;
+  --text-1:      #FFF0E0;
+  --text-2:      #D4B8A8;
+  --text-3:      #A08070;
+  --text-4:      #6B5A50;
+  --text-inv:    #1A1A2E;
+  --shadow-sm:   0 2px 8px  rgba(0,0,0,.35);
+  --shadow-md:   0 4px 16px rgba(0,0,0,.45);
+  --shadow-lg:   0 8px 32px rgba(0,0,0,.55);
+  --shadow-xl:   0 16px 48px rgba(0,0,0,.65);
+  --nav-bg:      rgba(42,31,24,.95);
+  --glass:       rgba(42,31,24,.7);
+  --glass-border:rgba(255,107,107,.2);
+  --overlay:     rgba(0,0,0,.7);
+  --coral-a:     rgba(255,107,107,.12);
+  --gold-a:      rgba(255,217,61,.1);
+  --badge-green: rgba(16,185,129,.15);
+  --badge-red:   rgba(239,68,68,.15);
+}
+
+/* ----------------------------------------------------------------
+   RESET
+---------------------------------------------------------------- */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text-1);
+  line-height: 1.6;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  transition: background .3s ease, color .3s ease;
+}
+
+img, video { max-width: 100%; display: block; }
+button { cursor: pointer; font-family: inherit; border: none; background: none; }
+input, select, textarea { font-family: inherit; outline: none; }
+a { color: var(--coral); text-decoration: none; transition: var(--t-base); }
+a:hover { color: var(--coral-dark); }
+ul, ol { list-style: none; }
+
+/* ----------------------------------------------------------------
+   SCROLLBAR
+---------------------------------------------------------------- */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: var(--r-full); }
+::-webkit-scrollbar-thumb:hover { background: var(--coral); }
+
+/* ----------------------------------------------------------------
+   LAYOUT
+---------------------------------------------------------------- */
+.container {
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 0 var(--sp-4);
+}
+
+.container-wide {
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 var(--sp-4);
+}
+
+.page {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Content area below top header, above bottom nav */
+.page-body {
+  flex: 1;
+  padding: var(--sp-4) 0 100px;
+  overflow-y: auto;
+}
+
+/* ----------------------------------------------------------------
+   FLEXBOX / GRID UTILITIES
+---------------------------------------------------------------- */
+.flex         { display: flex; }
+.flex-col     { flex-direction: column; }
+.flex-wrap    { flex-wrap: wrap; }
+.items-center { align-items: center; }
+.items-start  { align-items: flex-start; }
+.items-end    { align-items: flex-end; }
+.justify-between { justify-content: space-between; }
+.justify-center  { justify-content: center; }
+.justify-end     { justify-content: flex-end; }
+.flex-1       { flex: 1; }
+.flex-shrink-0{ flex-shrink: 0; }
+.gap-1  { gap: var(--sp-1); }
+.gap-2  { gap: var(--sp-2); }
+.gap-3  { gap: var(--sp-3); }
+.gap-4  { gap: var(--sp-4); }
+.gap-6  { gap: var(--sp-6); }
+.w-full { width: 100%; }
+
+/* ----------------------------------------------------------------
+   TEXT UTILITIES
+---------------------------------------------------------------- */
+.text-xs   { font-size: var(--text-xs); }
+.text-sm   { font-size: var(--text-sm); }
+.text-base { font-size: var(--text-base); }
+.text-lg   { font-size: var(--text-lg); }
+.text-xl   { font-size: var(--text-xl); }
+.text-2xl  { font-size: var(--text-2xl); }
+.text-center { text-align: center; }
+.text-right  { text-align: right; }
+
+.font-medium { font-weight: var(--weight-medium); }
+.font-semi   { font-weight: var(--weight-semi); }
+.font-bold   { font-weight: var(--weight-bold); }
+
+.text-1  { color: var(--text-1); }
+.text-2  { color: var(--text-2); }
+.text-3  { color: var(--text-3); }
+.text-4  { color: var(--text-4); }
+.text-coral { color: var(--coral); }
+.text-gold  { color: var(--gold-dark); }
+.text-success { color: var(--success); }
+.text-danger  { color: var(--danger); }
+
+.gradient-text {
+  background: var(--gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.truncate {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* ----------------------------------------------------------------
+   SPACING UTILITIES
+---------------------------------------------------------------- */
+.mt-1  { margin-top: var(--sp-1); }  .mt-2  { margin-top: var(--sp-2); }
+.mt-3  { margin-top: var(--sp-3); }  .mt-4  { margin-top: var(--sp-4); }
+.mt-6  { margin-top: var(--sp-6); }  .mt-8  { margin-top: var(--sp-8); }
+.mb-1  { margin-bottom: var(--sp-1); } .mb-2 { margin-bottom: var(--sp-2); }
+.mb-3  { margin-bottom: var(--sp-3); } .mb-4 { margin-bottom: var(--sp-4); }
+.mb-6  { margin-bottom: var(--sp-6); } .mb-8 { margin-bottom: var(--sp-8); }
+.p-4   { padding: var(--sp-4); }
+.px-4  { padding-left: var(--sp-4); padding-right: var(--sp-4); }
+.py-4  { padding-top: var(--sp-4); padding-bottom: var(--sp-4); }
+
+/* ----------------------------------------------------------------
+   DISPLAY UTILITIES
+---------------------------------------------------------------- */
+.hidden   { display: none !important; }
+.block    { display: block; }
+.inline   { display: inline; }
+.relative { position: relative; }
+.absolute { position: absolute; }
+.overflow-hidden { overflow: hidden; }
+
+/* ----------------------------------------------------------------
+   ANIMATIONS
+---------------------------------------------------------------- */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: .5; }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(20px) scale(.95); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.animate-fade    { animation: fadeIn .25s ease forwards; }
+.animate-fade-up { animation: fadeInUp .3s ease forwards; }
+.animate-scale   { animation: scaleIn .2s ease forwards; }
+
+/* ----------------------------------------------------------------
+   RESPONSIVE BREAKPOINTS
+---------------------------------------------------------------- */
+@media (min-width: 640px) {
+  .sm\:flex      { display: flex; }
+  .sm\:hidden    { display: none; }
+  .sm\:grid-2    { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--sp-4); }
+}
+
+@media (min-width: 768px) {
+  .md\:grid-2    { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--sp-4); }
+  .md\:grid-3    { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-4); }
+  .md\:container { max-width: 960px; }
+}
