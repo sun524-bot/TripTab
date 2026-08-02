@@ -4,14 +4,49 @@ function getErrorMessage(error) {
   switch (error.code) {
     case 'auth/wrong-password':
     case 'auth/user-not-found':
-      return i18n.t('auth.error.invalidCreds') || 'Invalid email or password.';
+      return (typeof i18n !== 'undefined' && i18n.t('auth.error.invalidCreds')) || 'Invalid email or password.';
     case 'auth/email-already-in-use':
-      return i18n.t('auth.error.emailInUse') || 'Email already in use.';
+      return (typeof i18n !== 'undefined' && i18n.t('auth.error.emailInUse')) || 'Email already in use.';
     case 'auth/weak-password':
-      return i18n.t('auth.error.weakPassword') || 'Password is too weak.';
+      return (typeof i18n !== 'undefined' && i18n.t('auth.error.weakPassword')) || 'Password is too weak.';
     default:
       return error.message;
   }
+}
+
+async function registerUser(name, email, password) {
+  const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
+  const user = userCredential.user;
+  
+  await user.updateProfile({ displayName: name });
+  
+  await firebase.firestore().collection('users').doc(user.uid).set({
+    name: name,
+    email: email.toLowerCase(),
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+
+  if (typeof checkPendingInvites === 'function') {
+    try {
+      await checkPendingInvites(email.toLowerCase(), user.uid, name);
+    } catch (e) {
+      console.warn("Error checking pending invites:", e);
+    }
+  }
+  return user;
+}
+
+async function loginWithEmail(email, password) {
+  const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
+  const user = userCredential.user;
+  if (typeof checkPendingInvites === 'function' && user.email) {
+    try {
+      await checkPendingInvites(user.email.toLowerCase(), user.uid, user.displayName || user.email.split('@')[0]);
+    } catch (e) {
+      console.warn("Error checking pending invites:", e);
+    }
+  }
+  return user;
 }
 
 async function initLoginPage() {

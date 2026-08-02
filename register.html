@@ -91,16 +91,11 @@
             submitBtn.innerHTML = '<span class="spinner-small"></span>';
 
             try {
-                if (typeof registerUser === 'function') {
-                    await registerUser(name, email, password);
-                } else {
-                    const cred = await firebase.auth().createUserWithEmailAndPassword(email, password);
-                    await cred.user.updateProfile({ displayName: name });
-                    // Also save to firestore users collection in a real implementation
-                }
+                await registerUser(name, email, password);
                 window.location.replace("dashboard.html");
             } catch (error) {
-                errorMsg.textContent = error.message;
+                const msg = typeof getErrorMessage === 'function' ? getErrorMessage(error) : error.message;
+                errorMsg.textContent = msg;
                 errorMsg.classList.remove('hidden');
             } finally {
                 submitBtn.disabled = false;

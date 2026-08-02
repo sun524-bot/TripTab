@@ -4,24 +4,27 @@ async function createTrip({ name, description, startDate, endDate, currency, cre
   const tripRef = db.collection('trips').doc();
   const tripId = tripRef.id;
   
+  const displayName = creatorName || (creatorEmail ? creatorEmail.split('@')[0] : 'Admin');
+  const email = creatorEmail || '';
+  
   const members = {};
   members[createdBy] = {
-    name: creatorName,
-    email: creatorEmail,
+    name: displayName,
+    email: email,
     role: 'admin',
     joinedAt: nowTimestamp()
   };
 
   await tripRef.set({
-    name,
+    name: name || 'New Trip',
     description: description || '',
-    startDate,
-    endDate,
-    currency,
-    createdBy,
+    startDate: startDate || '',
+    endDate: endDate || '',
+    currency: currency || 'MYR',
+    createdBy: createdBy,
     createdAt: nowTimestamp(),
     status: 'active',
-    members,
+    members: members,
     memberUids: [createdBy],
     pendingInvites: []
   });
@@ -114,8 +117,10 @@ async function archiveTrip(tripId) {
 }
 
 async function checkPendingInvites(email, uid, name) {
+  if (!email || !uid) return;
+  const cleanEmail = email.toLowerCase().trim();
   const tripsSnap = await db.collection('trips')
-    .where('pendingInvites', 'array-contains', email)
+    .where('pendingInvites', 'array-contains', cleanEmail)
     .get();
 
   if (tripsSnap.empty) return;
@@ -125,13 +130,13 @@ async function checkPendingInvites(email, uid, name) {
     const tripRef = doc.ref;
     batch.update(tripRef, {
       [`members.${uid}`]: {
-        name: name,
-        email: email,
+        name: name || cleanEmail.split('@')[0],
+        email: cleanEmail,
         role: 'member',
         joinedAt: nowTimestamp()
       },
       memberUids: firebase.firestore.FieldValue.arrayUnion(uid),
-      pendingInvites: firebase.firestore.FieldValue.arrayRemove(email)
+      pendingInvites: firebase.firestore.FieldValue.arrayRemove(cleanEmail)
     });
   });
   

@@ -77,15 +77,11 @@
             submitBtn.innerHTML = '<span class="spinner-small"></span>';
 
             try {
-                if (typeof loginWithEmail === 'function') {
-                    await loginWithEmail(email, password);
-                    window.location.replace("dashboard.html");
-                } else {
-                    await firebase.auth().signInWithEmailAndPassword(email, password);
-                    window.location.replace("dashboard.html");
-                }
+                await loginWithEmail(email, password);
+                window.location.replace("dashboard.html");
             } catch (error) {
-                errorMsg.textContent = error.message;
+                const msg = typeof getErrorMessage === 'function' ? getErrorMessage(error) : error.message;
+                errorMsg.textContent = msg;
                 errorMsg.classList.remove('hidden');
             } finally {
                 submitBtn.disabled = false;

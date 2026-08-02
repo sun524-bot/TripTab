@@ -13,12 +13,13 @@ service cloud.firestore {
       return isAuth() && request.auth.uid == uid;
     }
 
-    function isTripMember(tripId) {
+    // Helper for subcollection access to check parent trip membership
+    function isParentTripMember(tripId) {
       return isAuth() &&
-        request.auth.uid in get(/databases/$(database)/documents/trips/$(tripId)).data.members;
+        request.auth.uid in get(/databases/$(database)/documents/trips/$(tripId)).data.memberUids;
     }
 
-    function isTripAdmin(tripId) {
+    function isParentTripAdmin(tripId) {
       return isAuth() &&
         get(/databases/$(database)/documents/trips/$(tripId)).data.members[request.auth.uid].role == 'admin';
     }
@@ -39,38 +40,42 @@ service cloud.firestore {
     // Trips collection
     // ----------------------------------------------------------------
     match /trips/{tripId} {
-      // Members can read their trip
-      allow read: if isTripMember(tripId);
+      // Members or invited users can read their trip (enables array-contains queries)
+      allow read: if isAuth() && (
+        (resource.data.memberUids != null && request.auth.uid in resource.data.memberUids) ||
+        (resource.data.pendingInvites != null && request.auth.token.email != null && request.auth.token.email in resource.data.pendingInvites)
+      );
 
       // Any authenticated user can create a trip (they become admin)
       allow create: if isAuth()
         && request.resource.data.createdBy == request.auth.uid
         && request.resource.data.members[request.auth.uid].role == 'admin';
 
-      // Members can update (e.g. add expense-related updates)
-      // Only admin can change member list structure
-      allow update: if isTripMember(tripId);
+      // Members can update (e.g. add expenses, invite members)
+      allow update: if isAuth() && (
+        request.auth.uid in resource.data.memberUids ||
+        (resource.data.pendingInvites != null && request.auth.token.email != null && request.auth.token.email in resource.data.pendingInvites)
+      );
 
       // Only admin can delete
-      allow delete: if isTripAdmin(tripId);
+      allow delete: if isAuth() && resource.data.members[request.auth.uid].role == 'admin';
 
       // ----------------------------------------------------------------
       // Expenses subcollection
       // ----------------------------------------------------------------
       match /expenses/{expenseId} {
         // Any trip member can read expenses
-        allow read: if isTripMember(tripId);
+        allow read: if isParentTripMember(tripId);
 
         // Any trip member can add an expense
-        allow create: if isTripMember(tripId)
-          && request.resource.data.addedBy == request.auth.uid;
+        allow create: if isParentTripMember(tripId);
 
         // Original adder OR admin can update/delete
-        allow update: if isTripMember(tripId)
-          && (resource.data.addedBy == request.auth.uid || isTripAdmin(tripId));
+        allow update: if isParentTripMember(tripId)
+          && (resource.data.paidBy == request.auth.uid || resource.data.addedBy == request.auth.uid || isParentTripAdmin(tripId));
 
-        allow delete: if isTripMember(tripId)
-          && (resource.data.addedBy == request.auth.uid || isTripAdmin(tripId));
+        allow delete: if isParentTripMember(tripId)
+          && (resource.data.paidBy == request.auth.uid || resource.data.addedBy == request.auth.uid || isParentTripAdmin(tripId));
       }
 
       // ----------------------------------------------------------------
@@ -78,16 +83,15 @@ service cloud.firestore {
       // ----------------------------------------------------------------
       match /settlements/{settlementId} {
         // Any trip member can read settlements
-        allow read: if isTripMember(tripId);
+        allow read: if isParentTripMember(tripId);
 
         // Trip member can mark their own payment as settled
-        allow create: if isTripMember(tripId)
-          && request.resource.data.markedBy == request.auth.uid;
+        allow create: if isParentTripMember(tripId);
 
-        // Allow update (undo settle) by the same person
-        allow update: if isTripMember(tripId);
+        // Allow update by trip member
+        allow update: if isParentTripMember(tripId);
 
-        allow delete: if isTripMember(tripId);
+        allow delete: if isParentTripMember(tripId);
       }
     }
   }

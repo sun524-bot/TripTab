@@ -302,10 +302,10 @@
                 showToast(i18n.t('okTripCreated'), 'success');
                 window.location.href = `trip.html?id=${tripId}`;
             } catch (error) {
-                showToast(i18n.t('errUnknown'), 'error');
+                showToast(error.message || i18n.t('errUnknown'), 'error');
                 console.error(error);
                 btn.disabled = false;
-                btn.innerHTML = i18n.t('createTripAction');
+                btn.innerHTML = `<span data-i18n="createTripAction">${i18n.t('createTripAction')}</span>`;
             }
         });
 
