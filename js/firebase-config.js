@@ -19,6 +19,11 @@ firebase.initializeApp(firebaseConfig);
 const db   = firebase.firestore();
 const auth = firebase.auth();
 
+// Convenience helper — used throughout trips.js, expenses.js, auth.js
+function nowTimestamp() {
+  return firebase.firestore.FieldValue.serverTimestamp();
+}
+
 // Enable offline persistence (works even without internet)
 db.enablePersistence({ synchronizeTabs: true }).catch(err => {
   if (err.code === 'failed-precondition') {
