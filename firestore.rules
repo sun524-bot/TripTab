@@ -40,25 +40,10 @@ service cloud.firestore {
     // Trips collection
     // ----------------------------------------------------------------
     match /trips/{tripId} {
-      // Members or invited users can read their trip (enables array-contains queries)
-      allow read: if isAuth() && (
-        (resource.data.memberUids != null && request.auth.uid in resource.data.memberUids) ||
-        (resource.data.pendingInvites != null && request.auth.token.email != null && request.auth.token.email in resource.data.pendingInvites)
-      );
-
-      // Any authenticated user can create a trip (they become admin)
-      allow create: if isAuth()
-        && request.resource.data.createdBy == request.auth.uid
-        && request.resource.data.members[request.auth.uid].role == 'admin';
-
-      // Members can update (e.g. add expenses, invite members)
-      allow update: if isAuth() && (
-        request.auth.uid in resource.data.memberUids ||
-        (resource.data.pendingInvites != null && request.auth.token.email != null && request.auth.token.email in resource.data.pendingInvites)
-      );
-
-      // Only admin can delete
-      allow delete: if isAuth() && resource.data.members[request.auth.uid].role == 'admin';
+      allow read: if isAuth();
+      allow create: if isAuth();
+      allow update: if isAuth();
+      allow delete: if isAuth() && (resource.data.members[request.auth.uid].role == 'admin' || resource.data.createdBy == request.auth.uid);
 
       // ----------------------------------------------------------------
       // Expenses subcollection

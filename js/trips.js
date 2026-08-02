@@ -119,42 +119,57 @@ async function archiveTrip(tripId) {
 async function checkPendingInvites(email, uid, name) {
   if (!email || !uid) return;
   const cleanEmail = email.toLowerCase().trim();
-  const tripsSnap = await db.collection('trips')
-    .where('pendingInvites', 'array-contains', cleanEmail)
-    .get();
+  const emailPrefix = cleanEmail.split('@')[0];
 
-  if (tripsSnap.empty) return;
+  try {
+    const tripsSnap = await db.collection('trips').get();
+    if (tripsSnap.empty) return;
 
-  for (const doc of tripsSnap.docs) {
-    const tripId = doc.id;
-    const tripData = doc.data();
-    const members = tripData.members || {};
+    for (const doc of tripsSnap.docs) {
+      const tripId = doc.id;
+      const tripData = doc.data();
+      const members = tripData.members || {};
+      const memberUids = tripData.memberUids || [];
+      const pendingInvites = (tripData.pendingInvites || []).map(e => (e || '').toLowerCase().trim());
 
-    // Check if there is a placeholder member with this email
-    let placeholderId = null;
-    Object.entries(members).forEach(([mId, mData]) => {
-      if (mData.isPlaceholder && mData.email && mData.email.toLowerCase().trim() === cleanEmail) {
-        placeholderId = mId;
+      // If user is already a real member of this trip, skip
+      if (memberUids.includes(uid)) continue;
+
+      const inPendingInvites = pendingInvites.includes(cleanEmail);
+      let placeholderId = null;
+
+      Object.entries(members).forEach(([mId, mData]) => {
+        if (mData && mData.isPlaceholder) {
+          const mEmail = (mData.email || '').toLowerCase().trim();
+          const mName  = (mData.name || '').toLowerCase().trim();
+          if (mEmail === cleanEmail || mName === cleanEmail || mName === emailPrefix) {
+            placeholderId = mId;
+          }
+        }
+      });
+
+      if (placeholderId) {
+        await linkPlaceholderMember(tripId, placeholderId, uid, cleanEmail, name);
+        if (inPendingInvites) {
+          await db.collection('trips').doc(tripId).update({
+            pendingInvites: firebase.firestore.FieldValue.arrayRemove(cleanEmail)
+          });
+        }
+      } else if (inPendingInvites) {
+        await db.collection('trips').doc(tripId).update({
+          [`members.${uid}`]: {
+            name: name || emailPrefix,
+            email: cleanEmail,
+            role: 'member',
+            joinedAt: nowTimestamp()
+          },
+          memberUids: firebase.firestore.FieldValue.arrayUnion(uid),
+          pendingInvites: firebase.firestore.FieldValue.arrayRemove(cleanEmail)
+        });
       }
-    });
-
-    if (placeholderId) {
-      await linkPlaceholderMember(tripId, placeholderId, uid, cleanEmail, name);
-      await db.collection('trips').doc(tripId).update({
-        pendingInvites: firebase.firestore.FieldValue.arrayRemove(cleanEmail)
-      });
-    } else {
-      await db.collection('trips').doc(tripId).update({
-        [`members.${uid}`]: {
-          name: name || cleanEmail.split('@')[0],
-          email: cleanEmail,
-          role: 'member',
-          joinedAt: nowTimestamp()
-        },
-        memberUids: firebase.firestore.FieldValue.arrayUnion(uid),
-        pendingInvites: firebase.firestore.FieldValue.arrayRemove(cleanEmail)
-      });
     }
+  } catch (err) {
+    console.error('Error in checkPendingInvites:', err);
   }
 }
 

@@ -180,10 +180,15 @@
             loadDashboard(user);
         });
 
-        function loadDashboard(user) {
+        async function loadDashboard(user) {
             const greetingText = i18n.t(greetingKey());
             const userName = user.displayName || user.email.split('@')[0];
             document.getElementById('user-greeting').innerText = `${greetingText}, ${userName} 👋`;
+            
+            // Check & link any pending trip invites or matching placeholder members
+            if (typeof checkPendingInvites === 'function' && user.email) {
+                checkPendingInvites(user.email, user.uid, userName).catch(err => console.warn('Pending invites check error:', err));
+            }
             
             if (unsubscribeTrips) unsubscribeTrips();
             
