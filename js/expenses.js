@@ -20,25 +20,27 @@ async function saveExpense(tripId, expenseData, expenseId = null) {
 
 async function uploadExpensePhotos(tripId, expenseId, files) {
   if (!files || files.length === 0) return [];
+
   const uploads = files.map(async (file, idx) => {
-    // 1. Try Firebase Storage first
+    const safeName = (file.name || 'receipt').replace(/[^a-zA-Z0-9._-]/g, '_');
+
+    // 1. Try Firebase Storage first if it is available.
     try {
       if (typeof storage !== 'undefined' && storage && storage.ref) {
-        const fileToUpload = typeof compressImage === 'function' ? await compressImage(file) : file;
-        const safeName = (file.name || 'receipt').replace(/[^a-zA-Z0-9._-]/g, '_');
+        const fileToUpload = typeof compressImage === 'function' ? await compressImage(file, 1200, 1200, 0.82) : file;
         const storageRef = storage.ref(`trips/${tripId}/expenses/${expenseId}/${Date.now()}_${idx}_${safeName}`);
         const snapshot = await storageRef.put(fileToUpload);
         const downloadUrl = await snapshot.ref.getDownloadURL();
         if (downloadUrl) return downloadUrl;
       }
     } catch (err) {
-      console.warn('Firebase Storage upload failed, using Data URL fallback:', err);
+      console.warn('Firebase Storage upload failed; falling back to inline image storage:', err);
     }
 
-    // 2. Fallback to compact Data URL if Storage fails or is unconfigured
+    // 2. Fallback to compact data URL so photos are still attached even when Storage is disabled or blocked.
     try {
       if (typeof fileToDataUrl === 'function') {
-        const dataUrl = await fileToDataUrl(file, 800, 800, 0.6);
+        const dataUrl = await fileToDataUrl(file, 900, 900, 0.72);
         if (dataUrl) return dataUrl;
       }
     } catch (fallbackErr) {
@@ -49,7 +51,7 @@ async function uploadExpensePhotos(tripId, expenseId, files) {
   });
 
   const results = await Promise.all(uploads);
-  return results.filter(url => url !== null);
+  return results.filter(Boolean);
 }
 
 async function deleteExpense(tripId, expenseId) {

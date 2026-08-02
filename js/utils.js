@@ -348,7 +348,7 @@ function compressImage(file, maxWidth = 1200, maxHeight = 1200, quality = 0.8) {
   });
 }
 
-function fileToDataUrl(file, maxWidth = 800, maxHeight = 800, quality = 0.6) {
+function fileToDataUrl(file, maxWidth = 600, maxHeight = 600, quality = 0.5) {
   return new Promise((resolve) => {
     if (!file || !file.type || !file.type.startsWith('image/')) {
       return resolve(null);

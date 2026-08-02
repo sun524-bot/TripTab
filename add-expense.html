@@ -551,30 +551,40 @@
 
       const originalBtnText = saveBtn.textContent;
       saveBtn.disabled = true;
-      saveBtn.textContent = selectedReceiptFiles.length ? 'Uploading photos...' : 'Saving...';
+      saveBtn.textContent = selectedReceiptFiles.length ? 'Processing photos...' : 'Saving...';
+
+      let newPhotoUrls = [];
+      if (selectedReceiptFiles.length) {
+        try {
+          const promises = selectedReceiptFiles.map(file => typeof fileToDataUrl === 'function' ? fileToDataUrl(file) : null);
+          const results = await Promise.all(promises);
+          newPhotoUrls = results.filter(url => url !== null);
+        } catch (photoErr) {
+          console.warn('Error processing receipt photos:', photoErr);
+        }
+      }
+
+      const allPhotoUrls = [...existingReceiptUrls, ...newPhotoUrls];
+
+      const expenseData = {
+        title,
+        amount,
+        date,
+        category: selectedCategory,
+        paidBy: selectedPayer,
+        addedBy: currentUser ? currentUser.uid : selectedPayer,
+        notes,
+        splits,
+        photoUrls: allPhotoUrls,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
 
       try {
-        let savedExpenseId = expenseId;
         if (expenseId) {
           await db.collection('trips').doc(tripId).collection('expenses').doc(expenseId).update(expenseData);
-          savedExpenseId = expenseId;
         } else {
           expenseData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
-          const addedDoc = await db.collection('trips').doc(tripId).collection('expenses').add(expenseData);
-          savedExpenseId = addedDoc.id;
-        }
-
-        if (selectedReceiptFiles.length) {
-          try {
-            const uploadedUrls = await uploadExpensePhotos(tripId, savedExpenseId, selectedReceiptFiles);
-            const mergedPhotoUrls = [...existingReceiptUrls, ...uploadedUrls];
-            await db.collection('trips').doc(tripId).collection('expenses').doc(savedExpenseId).update({ photoUrls: mergedPhotoUrls });
-          } catch (uploadErr) {
-            console.warn('Photo upload failed:', uploadErr);
-            showToast('Expense saved. Some photos could not be uploaded.');
-            goBack();
-            return;
-          }
+          await db.collection('trips').doc(tripId).collection('expenses').add(expenseData);
         }
 
         showToast(expenseId ? 'Expense updated' : 'Expense added');
