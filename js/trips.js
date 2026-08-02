@@ -60,20 +60,23 @@ function listenUserTrips(uid, email, callback) {
     });
 }
 
-async function inviteMember(tripId, email) {
+async function inviteMember(tripId, rawEmail) {
   const tripRef = db.collection('trips').doc(tripId);
-  const usersSnap = await db.collection('users').where('email', '==', email).get();
+  const cleanEmail = (rawEmail || '').toLowerCase().trim();
+  if (!cleanEmail) return { found: false };
+
+  const usersSnap = await db.collection('users').where('email', '==', cleanEmail).get();
   
   if (!usersSnap.empty) {
-    // User exists, add to trip members
+    // User exists in Firestore users collection, add to trip members directly
     const userDoc = usersSnap.docs[0];
     const userData = userDoc.data();
     const uid = userDoc.id;
     
     await tripRef.update({
       [`members.${uid}`]: {
-        name: userData.name,
-        email: userData.email,
+        name: userData.name || userData.displayName || cleanEmail.split('@')[0],
+        email: cleanEmail,
         role: 'member',
         joinedAt: nowTimestamp()
       },
@@ -81,9 +84,9 @@ async function inviteMember(tripId, email) {
     });
     return { found: true };
   } else {
-    // User not found, add to pending invites
+    // User not in Firestore users collection yet (has not logged into web app)
     await tripRef.update({
-      pendingInvites: firebase.firestore.FieldValue.arrayUnion(email)
+      pendingInvites: firebase.firestore.FieldValue.arrayUnion(cleanEmail)
     });
     return { found: false };
   }

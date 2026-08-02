@@ -196,7 +196,7 @@ const TRANSLATIONS = {
     memberAddedAsPlaceholder: '"{name}" added as placeholder member. You can log expenses under their name.',
     errorAddingMember: 'Error adding member',
     editMemberTitle: 'Edit Member',
-    noAccountHint: 'No account yet — admin must create their login via Firebase Console → Authentication → Add user.',
+    noAccountHint: 'Pending first login — will automatically link when they sign in.',
     memberUpdatedSuccess: 'Member updated successfully!',
 
     // Expense item rendering
@@ -458,7 +458,7 @@ const TRANSLATIONS = {
     memberAddedAsPlaceholder: '「{name}」已作为占位成员添加，可以用其名字记录费用。',
     errorAddingMember: '添加成员失败',
     editMemberTitle: '编辑成员',
-    noAccountHint: '尚未创建账号 — 管理员需到 Firebase Console → Authentication → 添加用户。',
+    noAccountHint: '等待首次登录 — 登录后将自动关联账号。',
     memberUpdatedSuccess: '成员信息已更新！',
 
     // Expense item rendering
