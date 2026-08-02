@@ -183,6 +183,23 @@ async function addPlaceholderMember(tripId, name, email = '') {
   return placeholderId;
 }
 
+async function updatePlaceholderMember(tripId, placeholderId, name, email = '') {
+  const tripRef = db.collection('trips').doc(tripId);
+  const cleanEmail = email ? email.toLowerCase().trim() : '';
+
+  const updates = {
+    [`members.${placeholderId}.name`]: name.trim()
+  };
+  if (cleanEmail !== undefined) {
+    updates[`members.${placeholderId}.email`] = cleanEmail;
+    // Keep pendingInvites in sync if email changed
+    if (cleanEmail) {
+      updates.pendingInvites = firebase.firestore.FieldValue.arrayUnion(cleanEmail);
+    }
+  }
+  await tripRef.update(updates);
+}
+
 async function linkPlaceholderMember(tripId, placeholderId, realUid, realEmail, realName) {
   const tripRef = db.collection('trips').doc(tripId);
   const tripDoc = await tripRef.get();

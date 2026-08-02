@@ -195,6 +195,9 @@ const TRANSLATIONS = {
     memberAddedSuccess: 'Member added to trip!',
     memberAddedAsPlaceholder: '"{name}" added as placeholder member. You can log expenses under their name.',
     errorAddingMember: 'Error adding member',
+    editMemberTitle: 'Edit Member',
+    noAccountHint: 'No account yet — admin must create their login via Firebase Console → Authentication → Add user.',
+    memberUpdatedSuccess: 'Member updated successfully!',
 
     // Expense item rendering
     paidByLabel: 'Paid by',
@@ -454,6 +457,9 @@ const TRANSLATIONS = {
     memberAddedSuccess: '成员已加入行程！',
     memberAddedAsPlaceholder: '「{name}」已作为占位成员添加，可以用其名字记录费用。',
     errorAddingMember: '添加成员失败',
+    editMemberTitle: '编辑成员',
+    noAccountHint: '尚未创建账号 — 管理员需到 Firebase Console → Authentication → 添加用户。',
+    memberUpdatedSuccess: '成员信息已更新！',
 
     // Expense item rendering
     paidByLabel: '付款人',

@@ -225,6 +225,32 @@
     </div>
   </div>
 
+  <!-- Edit Placeholder Member Modal -->
+  <div class="modal-overlay hidden" id="edit-member-modal">
+    <div class="modal bottom-sheet">
+      <div class="modal-handle"></div>
+      <div class="flex-row space-between align-center mb-3">
+        <h3 class="modal-title m-0" data-i18n="editMemberTitle">Edit Member</h3>
+        <button class="btn-icon" onclick="closeEditMemberModal()" type="button">
+          <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <form id="edit-member-form" onsubmit="handleSaveMemberEdit(event)">
+        <input type="hidden" id="edit-member-uid" />
+        <div class="form-group mb-3">
+          <label style="font-weight:600;font-size:0.85rem;" data-i18n="memberNameLabel">Member Name</label>
+          <input type="text" id="edit-member-name" class="form-input" required style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);" />
+        </div>
+        <div class="form-group mb-4">
+          <label style="font-weight:600;font-size:0.85rem;" data-i18n="emailOptionalLabel">Email (Optional)</label>
+          <input type="email" id="edit-member-email" class="form-input" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);" />
+          <small class="text-muted" style="font-size:0.75rem;display:block;margin-top:4px;" data-i18n="noAccountHint">No account yet — you must create their login via Firebase Console → Authentication → Add user.</small>
+        </div>
+        <button type="submit" class="btn btn-primary btn-full" data-i18n="saveChanges">Save Changes</button>
+      </form>
+    </div>
+  </div>
+
   <!-- Edit Trip Details Modal -->
   <div class="modal-overlay hidden" id="edit-trip-modal">
     <div class="modal bottom-sheet">
@@ -541,23 +567,35 @@
           badge = `<span class="badge badge-neutral" style="font-size:0.75rem;padding:2px 8px;border-radius:10px;background:var(--bg-body);color:var(--text-2);">${i18n.t('virtualBadge')}</span>`;
         }
 
-        let removeBtn = '';
+        let actionBtns = '';
         if (isAdmin && !isMe) {
-          removeBtn = `<button class="btn btn-sm btn-danger ml-2" onclick="handleRemoveMember('${uid}', '${name.replace(/'/g, "\\'")}')" title="${i18n.t('removeMemberTitle')}">
+          const editBtn = isPlaceholder
+            ? `<button class="btn btn-sm btn-secondary ml-2" onclick="openEditMemberModal('${uid}', '${name.replace(/'/g, "\\'").replace(/"/g, '&quot;')}', '${email}')" title="Edit member" style="margin-right:4px;">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </button>`
+            : '';
+          const removeBtn = `<button class="btn btn-sm btn-danger ml-2" onclick="handleRemoveMember('${uid}', '${name.replace(/'/g, "\\'").replace(/"/g, '&quot;')}')" title="${i18n.t('removeMemberTitle')}">
             <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/></svg>
           </button>`;
+          actionBtns = `<div style="display:flex;align-items:center;gap:4px;">${editBtn}${removeBtn}</div>`;
         }
+
+        // For placeholder members, show login hint below email
+        const loginHint = isPlaceholder
+          ? `<div style="font-size:0.7rem;color:var(--coral);margin-top:2px;" data-i18n="noAccountHint">No account yet — admin must create login</div>`
+          : '';
 
         row.innerHTML = `
           <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;">
             <div class="avatar avatar-sm" style="background:${avatarColor(uid)};flex-shrink:0;">${getInitials(name)}</div>
             <div class="member-info" style="min-width:0;">
               <div class="member-name font-bold" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${name}${isMe ? ` ${i18n.t('youSuffix')}` : ''}</div>
-              <div class="member-email text-muted" style="font-size:0.75rem;">${email || (isPlaceholder ? i18n.t('unregisteredMember') : '')}</div>
+              <div class="member-email text-muted" style="font-size:0.75rem;">${email || ''}</div>
+              ${loginHint}
             </div>
             ${badge}
           </div>
-          ${removeBtn}
+          ${actionBtns}
         `;
         list.appendChild(row);
       });
@@ -572,6 +610,39 @@
       document.getElementById('add-member-modal').classList.add('hidden');
       document.getElementById('virtual-member-form').reset();
       document.getElementById('email-invite-form').reset();
+    }
+
+    function openEditMemberModal(uid, name, email) {
+      document.getElementById('edit-member-uid').value = uid;
+      document.getElementById('edit-member-name').value = name;
+      document.getElementById('edit-member-email').value = email || '';
+      if (typeof i18n !== 'undefined') i18n.applyAll();
+      document.getElementById('edit-member-modal').classList.remove('hidden');
+    }
+
+    function closeEditMemberModal() {
+      document.getElementById('edit-member-modal').classList.add('hidden');
+      document.getElementById('edit-member-form').reset();
+    }
+
+    async function handleSaveMemberEdit(e) {
+      e.preventDefault();
+      const uid   = document.getElementById('edit-member-uid').value;
+      const name  = document.getElementById('edit-member-name').value.trim();
+      const email = document.getElementById('edit-member-email').value.trim().toLowerCase();
+      const btn   = e.target.querySelector('button[type="submit"]');
+      if (!name) return;
+      btn.disabled = true;
+      try {
+        await updatePlaceholderMember(tripId, uid, name, email);
+        showToast(i18n.t('memberUpdatedSuccess'), 'success');
+        closeEditMemberModal();
+      } catch (err) {
+        console.error('Edit member error:', err);
+        showToast(i18n.t('errorAddingMember') + ': ' + (err.message || err), 'error');
+      } finally {
+        btn.disabled = false;
+      }
     }
 
     function switchAddMemberType(type) {
