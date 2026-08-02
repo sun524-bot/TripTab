@@ -101,14 +101,14 @@
           <h4 class="m-0" data-i18n="tripMembers" style="font-size: 1.1rem; font-weight: 700;">Trip Members</h4>
           <span class="text-muted" style="font-size: 0.75rem;" data-i18n="manageMembersHint">Manage members & invitations</span>
         </div>
-        <button class="btn btn-primary btn-sm flex-row align-center gap-1" onclick="openAddMemberModal()" style="border-radius: 20px; padding: 0.4rem 0.8rem;">
+        <button id="add-member-btn" class="btn btn-primary btn-sm flex-row align-center gap-1 hidden" onclick="openAddMemberModal()" style="border-radius: 20px; padding: 0.4rem 0.8rem;">
           <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           <span data-i18n="addMember">Add Member</span>
         </button>
       </div>
 
-      <!-- Prominent Add Member Banner Card -->
-      <div class="card p-3 mb-3 flex-row space-between align-center" onclick="openAddMemberModal()" style="background: var(--coral-a); border: 1.5px dashed var(--coral); border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: space-between;">
+      <!-- Prominent Add Member Banner Card (admin only) -->
+      <div id="add-member-banner" class="card p-3 mb-3 flex-row space-between align-center hidden" onclick="openAddMemberModal()" style="background: var(--coral-a); border: 1.5px dashed var(--coral); border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: space-between;">
         <div class="flex-row align-center gap-2" style="display: flex; align-items: center; gap: 12px;">
           <div style="font-size: 1.5rem;">👤➕</div>
           <div>
@@ -289,7 +289,7 @@
           <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
           <span style="font-weight:600;" data-i18n="shareTripInviteLink">Share Trip Invite Link</span>
         </button>
-        <button class="btn btn-secondary btn-full flex-row align-center gap-3 p-3" onclick="openEditTripModal(); closeTripMenu();" style="display:flex;align-items:center;gap:12px;text-align:left;padding:12px;">
+        <button id="menu-edit-trip-btn" class="btn btn-secondary btn-full flex-row align-center gap-3 p-3 hidden" onclick="openEditTripModal(); closeTripMenu();" style="display:flex;align-items:center;gap:12px;text-align:left;padding:12px;">
           <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
           <span style="font-weight:600;" data-i18n="editTripDetails">Edit Trip Details</span>
         </button>
@@ -372,6 +372,17 @@
         currentTrip = { id: doc.id, ...doc.data() };
         tripMembers = currentTrip.members || {};
 
+        const memberMap = currentTrip.members || {};
+        const memberUids = currentTrip.memberUids || [];
+
+        // --- Access control: redirect non-members ---
+        const isMember = memberUids.includes(user.uid);
+        if (!isMember) {
+          showToast('You do not have access to this trip.', 'error');
+          window.location.href = 'dashboard.html';
+          return;
+        }
+
         document.getElementById('trip-name').textContent = currentTrip.name || 'Trip';
         document.getElementById('hero-name').textContent = currentTrip.name || 'Trip';
         document.title = `TripTab - ${currentTrip.name || 'Trip'}`;
@@ -379,20 +390,33 @@
           document.getElementById('hero-dates').textContent = formatDateRange(currentTrip.startDate, currentTrip.endDate);
         }
 
-        const memberMap = currentTrip.members || {};
         document.getElementById('stat-members').textContent = Object.keys(memberMap).length;
 
         // isAdmin: check members map role field
         const isAdmin = memberMap[user.uid]?.role === 'admin';
+
+        // Show/hide admin-only UI
         const inviteSec = document.getElementById('invite-section');
-        if (isAdmin && inviteSec) {
-          inviteSec.classList.remove('hidden');
-        }
+        if (inviteSec) inviteSec.classList.toggle('hidden', !isAdmin);
+
+        const addMemberBtn = document.getElementById('add-member-btn');
+        if (addMemberBtn) addMemberBtn.classList.toggle('hidden', !isAdmin);
+
+        const addMemberBanner = document.getElementById('add-member-banner');
+        if (addMemberBanner) addMemberBanner.style.display = isAdmin ? 'flex' : 'none';
+
+        const menuEditBtn = document.getElementById('menu-edit-trip-btn');
+        if (menuEditBtn) menuEditBtn.classList.toggle('hidden', !isAdmin);
 
         loadMembers(memberMap, isAdmin);
         calculateSettlements(cachedExpenses);
       }, err => {
         console.error('loadTrip error:', err);
+        // Firestore permission denied = not a member
+        if (err.code === 'permission-denied') {
+          showToast('You do not have access to this trip.', 'error');
+          window.location.href = 'dashboard.html';
+        }
       });
     }
 
