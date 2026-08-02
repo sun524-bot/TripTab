@@ -1303,12 +1303,14 @@
       if (!modal || !image) return;
       image.src = url;
       modal.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
     }
 
     function closePhotoPreview() {
       const modal = document.getElementById('photo-preview-modal');
       if (!modal) return;
       modal.classList.add('hidden');
+      document.body.style.overflow = '';
     }
 
     window.openPhotoPreview = openPhotoPreview;
