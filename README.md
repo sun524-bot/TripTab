@@ -86,6 +86,27 @@ Travel Apps/
 
 ---
 
+## 🔧 Configuring Your Own Firebase API (For Developers)
+
+If you clone or fork this repository to host your own instance of TripTab:
+
+1. Create a free project at [console.firebase.google.com](https://console.firebase.google.com/).
+2. Enable **Email/Password Authentication** in *Build -> Authentication -> Sign-in method*.
+3. Create a **Cloud Firestore Database** in *Build -> Firestore Database*.
+4. Replace the credentials in `js/firebase-config.js` with your own Firebase web config:
+   ```javascript
+   const firebaseConfig = {
+     apiKey: "YOUR_FIREBASE_API_KEY",
+     authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+     projectId: "YOUR_PROJECT_ID",
+     storageBucket: "YOUR_PROJECT_ID.appspot.com",
+     messagingSenderId: "YOUR_SENDER_ID",
+     appId: "YOUR_APP_ID"
+   };
+   ```
+
+---
+
 ## 📝 License
 
 Distributed under the MIT License. See `LICENSE` for more information.
