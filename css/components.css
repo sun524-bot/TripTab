@@ -1142,13 +1142,16 @@
   backdrop-filter: blur(10px) !important;
   -webkit-backdrop-filter: blur(10px) !important;
   z-index: 100000 !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
   padding: 1rem !important;
   margin: 0 !important;
   box-sizing: border-box !important;
   animation: fadeIn 0.2s ease;
+}
+
+.photo-preview-overlay:not(.hidden) {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
 .photo-preview-content {
