@@ -536,19 +536,6 @@
         selected.forEach(id => splits[id] = amt);
       }
 
-      const expenseData = {
-        title,
-        amount,
-        date,
-        category: selectedCategory,
-        paidBy: selectedPayer,
-        addedBy: currentUser ? currentUser.uid : selectedPayer,
-        notes,
-        splits,
-        photoUrls: existingReceiptUrls,
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-      };
-
       const originalBtnText = saveBtn.textContent;
       saveBtn.disabled = true;
       saveBtn.textContent = selectedReceiptFiles.length ? 'Processing photos...' : 'Saving...';
