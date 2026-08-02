@@ -227,7 +227,7 @@
                         
                         const avatarStackHtml = memberList.slice(0, 3).map(([uid, m]) => {
                             const name = m.name || m.displayName || 'U';
-                            return `<div class="avatar avatar-xs" style="background:${avatarColor(uid)};border:2px solid var(--bg-card)" title="${name}">${getInitials(name)}</div>`;
+                            return `<div class="avatar avatar-xs" style="background:${avatarColor(uid)};border:2px solid var(--bg-card)" title="${escapeHtml(name)}">${escapeHtml(getInitials(name))}</div>`;
                         }).join('');
                         
                         const extraCount = memberList.length > 3 ? `<div class="avatar avatar-xs" style="background:var(--gray-500);color:#fff;border:2px solid var(--bg-card)">+${memberList.length - 3}</div>` : '';
@@ -237,14 +237,14 @@
                             <div class="trip-card-body" style="padding:16px;">
                                 <div class="flex-row space-between align-start gap-2 mb-2" style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
                                     <div style="min-width:0;flex:1;">
-                                        <div class="trip-card-title font-bold" style="font-size:1.1rem;word-break:break-word;overflow:hidden;">${trip.name}</div>
-                                        <div class="trip-card-dates text-muted" style="font-size:0.75rem;">${formatDateRange(trip.startDate, trip.endDate)}</div>
+                                        <div class="trip-card-title font-bold" style="font-size:1.1rem;word-break:break-word;overflow:hidden;">${escapeHtml(trip.name)}</div>
+                                        <div class="trip-card-dates text-muted" style="font-size:0.75rem;">${escapeHtml(formatDateRange(trip.startDate, trip.endDate))}</div>
                                     </div>
-                                    <span class="badge ${balClass}" style="flex-shrink:0;">${balText}</span>
+                                    <span class="badge ${balClass}" style="flex-shrink:0;">${escapeHtml(balText)}</span>
                                 </div>
                                 <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
                                     <div class="avatar-stack">${avatarStackHtml}${extraCount}</div>
-                                    <span style="font-size:var(--text-xs);color:var(--text-3)">${memberList.length} ${i18n.t('members').toLowerCase()}</span>
+                                    <span style="font-size:var(--text-xs);color:var(--text-3)">${memberList.length} ${escapeHtml(i18n.t('members').toLowerCase())}</span>
                                 </div>
                             </div>
                         `;

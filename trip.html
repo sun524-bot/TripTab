@@ -519,12 +519,12 @@
         item.innerHTML = `
           <div class="flex justify-between items-center">
             <div>
-              <div class="font-bold">${exp.title}</div>
-              <div class="text-sm text-gray-500">${i18n.t('paidByLabel')} ${payerName}</div>
+              <div class="font-bold">${escapeHtml(exp.title)}</div>
+              <div class="text-sm text-gray-500">${escapeHtml(i18n.t('paidByLabel'))} ${escapeHtml(payerName)}</div>
             </div>
             <div class="text-right">
-              <div class="font-bold text-coral">RM ${exp.amount.toFixed(2)}</div>
-              ${mySplit > 0 ? `<div class="text-xs text-gray-500">${i18n.t('youOweLabel')} RM ${mySplit.toFixed(2)}</div>` : ''}
+              <div class="font-bold text-coral">RM ${escapeHtml(exp.amount.toFixed(2))}</div>
+              ${mySplit > 0 ? `<div class="text-xs text-gray-500">${escapeHtml(i18n.t('youOweLabel'))} RM ${escapeHtml(mySplit.toFixed(2))}</div>` : ''}
             </div>
           </div>
         `;
@@ -580,17 +580,14 @@
           actionBtns = `<div style="display:flex;align-items:center;gap:4px;">${editBtn}${removeBtn}</div>`;
         }
 
-        // For placeholder members, show login hint below email
-        const loginHint = isPlaceholder
-          ? `<div style="font-size:0.7rem;color:var(--coral);margin-top:2px;">${i18n.t('noAccountHint')}</div>`
-          : '';
+        const loginHint = '';
 
         row.innerHTML = `
           <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;">
-            <div class="avatar avatar-sm" style="background:${avatarColor(uid)};flex-shrink:0;">${getInitials(name)}</div>
+            <div class="avatar avatar-sm" style="background:${avatarColor(uid)};flex-shrink:0;">${escapeHtml(getInitials(name))}</div>
             <div class="member-info" style="min-width:0;">
-              <div class="member-name font-bold" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${name}${isMe ? ` ${i18n.t('youSuffix')}` : ''}</div>
-              <div class="member-email text-muted" style="font-size:0.75rem;">${email || ''}</div>
+              <div class="member-name font-bold" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(name)}${isMe ? ` ${escapeHtml(i18n.t('youSuffix'))}` : ''}</div>
+              <div class="member-email text-muted" style="font-size:0.75rem;">${escapeHtml(email || '')}</div>
               ${loginHint}
             </div>
             ${badge}
@@ -711,13 +708,13 @@
       try {
         const result = await inviteMember(tripId, email);
         if (result.found) {
-          // Registered user found — added directly
           showToast(i18n.t('memberAddedSuccess'), 'success');
         } else {
-          // No account found — add as placeholder so expenses can still be logged
-          const placeholderName = email.split('@')[0];
-          await addPlaceholderMember(tripId, placeholderName, email);
-          showToast(i18n.t('memberAddedAsPlaceholder', { name: placeholderName }), 'success');
+          if (!result.existingPlaceholder) {
+            const placeholderName = email.split('@')[0];
+            await addPlaceholderMember(tripId, placeholderName, email);
+          }
+          showToast(i18n.t('memberAddedAsPlaceholder', { name: email.split('@')[0] }), 'success');
         }
         closeAddMemberModal();
       } catch (err) {
@@ -906,9 +903,9 @@
         row.style.padding = '8px 0';
         row.style.borderBottom = '1px solid var(--border)';
         row.innerHTML = `
-          <span style="font-weight:600;">${name}</span>
+          <span style="font-weight:600;">${escapeHtml(name)}</span>
           <span class="${b >= 0 ? 'text-success' : 'text-danger'} font-bold">
-            ${b >= 0 ? '+' : ''}RM ${b.toFixed(2)}
+            ${b >= 0 ? '+' : ''}RM ${escapeHtml(b.toFixed(2))}
           </span>
         `;
         bRows.appendChild(row);
@@ -976,13 +973,13 @@
         el.title = i18n.t('clickViewBreakdown');
         el.onclick = () => openSettlementDetails(t.from, t.to, t.amount);
         el.innerHTML = `
-          <div class="avatar avatar-sm" style="background:${avatarColor(t.from)};flex-shrink:0;">${getInitials(fromName)}</div>
+          <div class="avatar avatar-sm" style="background:${avatarColor(t.from)};flex-shrink:0;">${escapeHtml(getInitials(fromName))}</div>
           <div style="flex:1;min-width:0">
-            <div style="font-size:.875rem;font-weight:600;color:var(--text-1)">${fromName}</div>
-            <div style="font-size:.75rem;color:var(--text-3)">${i18n.t('paysLabel')} ${toName} <span style="color:var(--coral);font-weight:600;margin-left:4px;">${i18n.t('detailsLabel')}</span></div>
+            <div style="font-size:.875rem;font-weight:600;color:var(--text-1)">${escapeHtml(fromName)}</div>
+            <div style="font-size:.75rem;color:var(--text-3)">${escapeHtml(i18n.t('paysLabel'))} ${escapeHtml(toName)} <span style="color:var(--coral);font-weight:600;margin-left:4px;">${escapeHtml(i18n.t('detailsLabel'))}</span></div>
           </div>
-          <div class="settle-amount" style="font-weight:700;">${formatCurrency(t.amount, currency)}</div>
-          <div class="avatar avatar-sm" style="background:${avatarColor(t.to)};flex-shrink:0;">${getInitials(toName)}</div>
+          <div class="settle-amount" style="font-weight:700;">${escapeHtml(formatCurrency(t.amount, currency))}</div>
+          <div class="avatar avatar-sm" style="background:${avatarColor(t.to)};flex-shrink:0;">${escapeHtml(getInitials(toName))}</div>
         `;
         list.appendChild(el);
       });
@@ -1010,9 +1007,9 @@
         row.style.padding = '8px 0';
         row.style.borderBottom = '1px solid var(--border)';
         row.innerHTML = `
-          <span style="font-weight:600;">${name}</span>
+          <span style="font-weight:600;">${escapeHtml(name)}</span>
           <span class="${b >= 0 ? 'text-success' : 'text-danger'} font-bold">
-            ${b >= 0 ? '+' : ''}RM ${b.toFixed(2)}
+            ${b >= 0 ? '+' : ''}RM ${escapeHtml(b.toFixed(2))}
           </span>
         `;
         bRows.appendChild(row);
@@ -1064,13 +1061,13 @@
         el.title = i18n.t('clickViewBreakdown');
         el.onclick = () => openSettlementDetails(t.from, t.to, t.amount);
         el.innerHTML = `
-          <div class="avatar avatar-sm" style="background:${avatarColor(t.from)};flex-shrink:0;">${getInitials(fromName)}</div>
+          <div class="avatar avatar-sm" style="background:${avatarColor(t.from)};flex-shrink:0;">${escapeHtml(getInitials(fromName))}</div>
           <div style="flex:1;min-width:0">
-            <div style="font-size:.875rem;font-weight:600;color:var(--text-1)">${fromName}</div>
-            <div style="font-size:.75rem;color:var(--text-3)">${i18n.t('paysLabel')} ${toName} <span style="color:var(--coral);font-weight:600;margin-left:4px;">${i18n.t('detailsLabel')}</span></div>
+            <div style="font-size:.875rem;font-weight:600;color:var(--text-1)">${escapeHtml(fromName)}</div>
+            <div style="font-size:.75rem;color:var(--text-3)">${escapeHtml(i18n.t('paysLabel'))} ${escapeHtml(toName)} <span style="color:var(--coral);font-weight:600;margin-left:4px;">${escapeHtml(i18n.t('detailsLabel'))}</span></div>
           </div>
-          <div class="settle-amount" style="font-weight:700;">${formatCurrency(t.amount, currency)}</div>
-          <div class="avatar avatar-sm" style="background:${avatarColor(t.to)};flex-shrink:0;">${getInitials(toName)}</div>
+          <div class="settle-amount" style="font-weight:700;">${escapeHtml(formatCurrency(t.amount, currency))}</div>
+          <div class="avatar avatar-sm" style="background:${avatarColor(t.to)};flex-shrink:0;">${escapeHtml(getInitials(toName))}</div>
         `;
         list.appendChild(el);
       });
@@ -1138,29 +1135,29 @@
           summaryBox.innerHTML = `
             <div style="font-size: 0.85rem; display: flex; flex-direction: column; gap: 6px;">
               <div class="flex-row space-between align-center" style="display:flex;justify-content:space-between;">
-                <span style="color:var(--text-2);">${toName} ${i18n.t('calcPaidFor')} ${fromName}:</span>
-                <span style="font-weight:700;color:var(--coral);">+${formatCurrency(totalPaidByToForFrom, currency)}</span>
+                <span style="color:var(--text-2);">${escapeHtml(toName)} ${escapeHtml(i18n.t('calcPaidFor'))} ${escapeHtml(fromName)}:</span>
+                <span style="font-weight:700;color:var(--coral);">+${escapeHtml(formatCurrency(totalPaidByToForFrom, currency))}</span>
               </div>
               <div class="flex-row space-between align-center" style="display:flex;justify-content:space-between;">
-                <span style="color:var(--text-2);">${i18n.t('calcDeduct')} ${fromName} ${i18n.t('calcPaidFor')} ${toName}:</span>
-                <span style="font-weight:700;color:var(--green);">-${formatCurrency(totalPaidByFromForTo, currency)}</span>
+                <span style="color:var(--text-2);">${escapeHtml(i18n.t('calcDeduct'))} ${escapeHtml(fromName)} ${escapeHtml(i18n.t('calcPaidFor'))} ${escapeHtml(toName)}:</span>
+                <span style="font-weight:700;color:var(--green);">-${escapeHtml(formatCurrency(totalPaidByFromForTo, currency))}</span>
               </div>
               <div class="flex-row space-between align-center" style="display:flex;justify-content:space-between;border-top:1px dashed var(--border);padding-top:4px;">
-                <span style="color:var(--text-2);">${i18n.t('calcDirectPairwiseBalance')}</span>
-                <span style="font-weight:700;color:var(--text-1);">${formatCurrency(directNet, currency)}</span>
+                <span style="color:var(--text-2);">${escapeHtml(i18n.t('calcDirectPairwiseBalance'))}</span>
+                <span style="font-weight:700;color:var(--text-1);">${escapeHtml(formatCurrency(directNet, currency))}</span>
               </div>
               <div class="flex-row space-between align-center" style="display:flex;justify-content:space-between;">
-                <span style="color:var(--text-2);font-size:0.75rem;">${i18n.t('calcGroupDebtSimplification')}</span>
+                <span style="color:var(--text-2);font-size:0.75rem;">${escapeHtml(i18n.t('calcGroupDebtSimplification'))}</span>
                 <span style="font-weight:700;font-size:0.75rem;color:${netAmount < directNet ? 'var(--green)' : 'var(--coral)'};">
-                  ${netAmount < directNet ? '-' : '+'}${formatCurrency(diff, currency)}
+                  ${netAmount < directNet ? '-' : '+'}${escapeHtml(formatCurrency(diff, currency))}
                 </span>
               </div>
               <div style="font-size:0.72rem;color:var(--text-3);font-style:italic;margin-top:2px;">
-                ${i18n.t('calcAdjustedNote')}
+                ${escapeHtml(i18n.t('calcAdjustedNote'))}
               </div>
               <div style="border-top: 1px solid var(--border); margin-top: 6px; padding-top: 8px; display:flex; justify-content:space-between; align-items:center;">
-                <span style="font-weight: 700; font-size: 0.95rem;">${i18n.t('calcFinalPayment')}</span>
-                <span style="font-weight: 800; font-size: 1.15rem; color: var(--coral);">${formatCurrency(netAmount, currency)}</span>
+                <span style="font-weight: 700; font-size: 0.95rem;">${escapeHtml(i18n.t('calcFinalPayment'))}</span>
+                <span style="font-weight: 800; font-size: 1.15rem; color: var(--coral);">${escapeHtml(formatCurrency(netAmount, currency))}</span>
               </div>
             </div>
           `;
@@ -1168,16 +1165,16 @@
           summaryBox.innerHTML = `
             <div style="font-size: 0.85rem; display: flex; flex-direction: column; gap: 8px;">
               <div class="flex-row space-between align-center" style="display:flex;justify-content:space-between;">
-                <span style="color:var(--text-2);">${toName} ${i18n.t('calcPaidFor')} ${fromName}:</span>
-                <span style="font-weight:700;color:var(--coral);">+${formatCurrency(totalPaidByToForFrom, currency)}</span>
+                <span style="color:var(--text-2);">${escapeHtml(toName)} ${escapeHtml(i18n.t('calcPaidFor'))} ${escapeHtml(fromName)}:</span>
+                <span style="font-weight:700;color:var(--coral);">+${escapeHtml(formatCurrency(totalPaidByToForFrom, currency))}</span>
               </div>
               <div class="flex-row space-between align-center" style="display:flex;justify-content:space-between;">
-                <span style="color:var(--text-2);">${i18n.t('calcDeduct')} ${fromName} ${i18n.t('calcPaidFor')} ${toName}:</span>
-                <span style="font-weight:700;color:var(--green);">-${formatCurrency(totalPaidByFromForTo, currency)}</span>
+                <span style="color:var(--text-2);">${escapeHtml(i18n.t('calcDeduct'))} ${escapeHtml(fromName)} ${escapeHtml(i18n.t('calcPaidFor'))} ${escapeHtml(toName)}:</span>
+                <span style="font-weight:700;color:var(--green);">-${escapeHtml(formatCurrency(totalPaidByFromForTo, currency))}</span>
               </div>
               <div style="border-top: 1px dashed var(--border); margin-top: 6px; padding-top: 8px; display:flex; justify-content:space-between; align-items:center;">
-                <span style="font-weight: 700; font-size: 0.95rem;">${i18n.t('calcNetPayment')}</span>
-                <span style="font-weight: 800; font-size: 1.15rem; color: var(--coral);">${formatCurrency(netAmount, currency)}</span>
+                <span style="font-weight: 700; font-size: 0.95rem;">${escapeHtml(i18n.t('calcNetPayment'))}</span>
+                <span style="font-weight: 800; font-size: 1.15rem; color: var(--coral);">${escapeHtml(formatCurrency(netAmount, currency))}</span>
               </div>
             </div>
           `;
@@ -1197,24 +1194,24 @@
           infoBanner.style.border = '1px dashed var(--border)';
           infoBanner.style.fontSize = '0.8rem';
           infoBanner.style.color = 'var(--text-2)';
-          infoBanner.innerHTML = `ℹ️ <strong>${i18n.t('calcIndirectTransfer')}</strong> ${fromName} ${i18n.t('calcIndirectTransferDesc')} ${toName} ${i18n.t('calcIndirectTransferDesc2')}`;
+          infoBanner.innerHTML = `ℹ️ <strong>${escapeHtml(i18n.t('calcIndirectTransfer'))}</strong> ${escapeHtml(fromName)} ${escapeHtml(i18n.t('calcIndirectTransferDesc'))} ${escapeHtml(toName)} ${escapeHtml(i18n.t('calcIndirectTransferDesc2'))}`;
           breakdownList.appendChild(infoBanner);
         }
 
         // Section 1: Expenses paid by TO (Y)
         const sec1 = document.createElement('div');
-        sec1.innerHTML = `<h5 style="margin: 4px 0 8px 0; font-size: 0.85rem; font-weight: 700; color: var(--text-1);">💳 ${toName} ${i18n.t('calcPaidFor')} ${fromName} (${fromName}${i18n.t('calcShareLabel')}):</h5>`;
+        sec1.innerHTML = `<h5 style="margin: 4px 0 8px 0; font-size: 0.85rem; font-weight: 700; color: var(--text-1);">💳 ${escapeHtml(toName)} ${escapeHtml(i18n.t('calcPaidFor'))} ${escapeHtml(fromName)} (${escapeHtml(fromName)}${escapeHtml(i18n.t('calcShareLabel'))}):</h5>`;
         if (expensesPaidByToForFrom.length === 0) {
-          sec1.innerHTML += `<div class="text-muted p-2" style="font-size: 0.8rem; background: var(--bg-body); border-radius: 8px;">${i18n.t('calcNoDirectExpenses')} ${toName} ${i18n.t('calcNoDirectExpenses2')} ${fromName}.</div>`;
+          sec1.innerHTML += `<div class="text-muted p-2" style="font-size: 0.8rem; background: var(--bg-body); border-radius: 8px;">${escapeHtml(i18n.t('calcNoDirectExpenses'))} ${escapeHtml(toName)} ${escapeHtml(i18n.t('calcNoDirectExpenses2'))} ${escapeHtml(fromName)}.</div>`;
         } else {
           expensesPaidByToForFrom.forEach(item => {
             sec1.innerHTML += `
               <div class="card p-3 mb-2 flex-row space-between align-center" style="background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
                 <div>
-                  <div style="font-weight: 600; font-size: 0.85rem;">${item.title}</div>
-                  <div style="font-size: 0.75rem; color: var(--text-3);">${formatDate(item.date)} • ${i18n.t('totalLabel')} ${formatCurrency(item.totalAmount, currency)}</div>
+                  <div style="font-weight: 600; font-size: 0.85rem;">${escapeHtml(item.title)}</div>
+                  <div style="font-size: 0.75rem; color: var(--text-3);">${escapeHtml(formatDate(item.date))} • ${escapeHtml(i18n.t('totalLabel'))} ${escapeHtml(formatCurrency(item.totalAmount, currency))}</div>
                 </div>
-                <div style="font-weight: 700; color: var(--coral); font-size: 0.9rem;">+${formatCurrency(item.share, currency)}</div>
+                <div style="font-weight: 700; color: var(--coral); font-size: 0.9rem;">+${escapeHtml(formatCurrency(item.share, currency))}</div>
               </div>
             `;
           });
@@ -1223,18 +1220,18 @@
 
         // Section 2: Expenses paid by FROM (X)
         const sec2 = document.createElement('div');
-        sec2.innerHTML = `<h5 style="margin: 12px 0 8px 0; font-size: 0.85rem; font-weight: 700; color: var(--text-1);">🔄 ${i18n.t('calcDeductSection')} ${fromName} (${toName}${i18n.t('calcShareLabel')}):</h5>`;
+        sec2.innerHTML = `<h5 style="margin: 12px 0 8px 0; font-size: 0.85rem; font-weight: 700; color: var(--text-1);">🔄 ${escapeHtml(i18n.t('calcDeductSection'))} ${escapeHtml(fromName)} (${escapeHtml(toName)}${escapeHtml(i18n.t('calcShareLabel'))}):</h5>`;
         if (expensesPaidByFromForTo.length === 0) {
-          sec2.innerHTML += `<div class="text-muted p-2" style="font-size: 0.8rem; background: var(--bg-body); border-radius: 8px;">${i18n.t('calcNoOffsetExpenses')} ${fromName} ${i18n.t('calcNoDirectExpenses2')} ${toName}.</div>`;
+          sec2.innerHTML += `<div class="text-muted p-2" style="font-size: 0.8rem; background: var(--bg-body); border-radius: 8px;">${escapeHtml(i18n.t('calcNoOffsetExpenses'))} ${escapeHtml(fromName)} ${escapeHtml(i18n.t('calcNoDirectExpenses2'))} ${escapeHtml(toName)}.</div>`;
         } else {
           expensesPaidByFromForTo.forEach(item => {
             sec2.innerHTML += `
               <div class="card p-3 mb-2 flex-row space-between align-center" style="background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
                 <div>
-                  <div style="font-weight: 600; font-size: 0.85rem;">${item.title}</div>
-                  <div style="font-size: 0.75rem; color: var(--text-3);">${formatDate(item.date)} • ${i18n.t('totalLabel')} ${formatCurrency(item.totalAmount, currency)}</div>
+                  <div style="font-weight: 600; font-size: 0.85rem;">${escapeHtml(item.title)}</div>
+                  <div style="font-size: 0.75rem; color: var(--text-3);">${escapeHtml(formatDate(item.date))} • ${escapeHtml(i18n.t('totalLabel'))} ${escapeHtml(formatCurrency(item.totalAmount, currency))}</div>
                 </div>
-                <div style="font-weight: 700; color: var(--green); font-size: 0.9rem;">-${formatCurrency(item.share, currency)}</div>
+                <div style="font-weight: 700; color: var(--green); font-size: 0.9rem;">-${escapeHtml(formatCurrency(item.share, currency))}</div>
               </div>
             `;
           });
@@ -1339,20 +1336,20 @@
           const card = document.createElement('div');
           card.className = 'print-breakdown-card';
 
-          let listItems1 = expU2ForU1.map(e => `<li>${e.title} (${formatDate(e.date)}) - Total ${formatCurrency(e.total, currency)} ➔ <strong>+${formatCurrency(e.share, currency)}</strong></li>`).join('');
-          let listItems2 = expU1ForU2.map(e => `<li>${e.title} (${formatDate(e.date)}) - Total ${formatCurrency(e.total, currency)} ➔ <strong>-${formatCurrency(e.share, currency)}</strong></li>`).join('');
+          let listItems1 = expU2ForU1.map(e => `<li>${escapeHtml(e.title)} (${escapeHtml(formatDate(e.date))}) - Total ${escapeHtml(formatCurrency(e.total, currency))} ➔ <strong>+${escapeHtml(formatCurrency(e.share, currency))}</strong></li>`).join('');
+          let listItems2 = expU1ForU2.map(e => `<li>${escapeHtml(e.title)} (${escapeHtml(formatDate(e.date))}) - Total ${escapeHtml(formatCurrency(e.total, currency))} ➔ <strong>-${escapeHtml(formatCurrency(e.share, currency))}</strong></li>`).join('');
 
           card.innerHTML = `
             <div style="font-weight:700;font-size:1rem;margin-bottom:0.4rem;color:#000;">
-              ${debtorName} pays ${creditorName}: ${formatCurrency(netAbs, currency)}
+              ${escapeHtml(debtorName)} pays ${escapeHtml(creditorName)}: ${escapeHtml(formatCurrency(netAbs, currency))}
             </div>
             <div style="font-size:0.85rem;margin-bottom:0.5rem;line-height:1.5;color:#333;">
-              <div>• ${n2} paid for ${n1}: <strong>+${formatCurrency(paidU2ForU1, currency)}</strong></div>
-              <div>• Deduct ${n1} paid for ${n2}: <strong>-${formatCurrency(paidU1ForU2, currency)}</strong></div>
-              <div>• <strong>Direct Pairwise Net: ${formatCurrency(netAbs, currency)}</strong></div>
+              <div>• ${escapeHtml(n2)} paid for ${escapeHtml(n1)}: <strong>+${escapeHtml(formatCurrency(paidU2ForU1, currency))}</strong></div>
+              <div>• Deduct ${escapeHtml(n1)} paid for ${escapeHtml(n2)}: <strong>-${escapeHtml(formatCurrency(paidU1ForU2, currency))}</strong></div>
+              <div>• <strong>Direct Pairwise Net: ${escapeHtml(formatCurrency(netAbs, currency))}</strong></div>
             </div>
-            ${expU2ForU1.length > 0 ? `<div style="font-size:0.8rem;margin-top:0.4rem;color:#000;"><strong>Expenses paid by ${n2} (${n1}'s share):</strong><ul style="margin:0.2rem 0 0.4rem 1.2rem;padding:0;">${listItems1}</ul></div>` : ''}
-            ${expU1ForU2.length > 0 ? `<div style="font-size:0.8rem;margin-top:0.4rem;color:#000;"><strong>Expenses paid by ${n1} (${n2}'s share):</strong><ul style="margin:0.2rem 0 0.4rem 1.2rem;padding:0;">${listItems2}</ul></div>` : ''}
+            ${expU2ForU1.length > 0 ? `<div style="font-size:0.8rem;margin-top:0.4rem;color:#000;"><strong>Expenses paid by ${escapeHtml(n2)} (${escapeHtml(n1)}'s share):</strong><ul style="margin:0.2rem 0 0.4rem 1.2rem;padding:0;">${listItems1}</ul></div>` : ''}
+            ${expU1ForU2.length > 0 ? `<div style="font-size:0.8rem;margin-top:0.4rem;color:#000;"><strong>Expenses paid by ${escapeHtml(n1)} (${escapeHtml(n2)}'s share):</strong><ul style="margin:0.2rem 0 0.4rem 1.2rem;padding:0;">${listItems2}</ul></div>` : ''}
           `;
           container.appendChild(card);
         }

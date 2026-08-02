@@ -1,5 +1,25 @@
 // js/trips.js
 
+function normalizeEmail(value) {
+  return (value || '').toLowerCase().trim();
+}
+
+function getMatchingPlaceholderIds(members, memberUids, email) {
+  const normalizedEmail = normalizeEmail(email);
+  const ids = [];
+
+  Object.entries(members || {}).forEach(([memberId, memberData]) => {
+    if (!memberData) return;
+    const isPlaceholder = memberData.isPlaceholder || memberId.startsWith('p_') || !memberUids.includes(memberId);
+    if (!isPlaceholder) return;
+    if (normalizeEmail(memberData.email) === normalizedEmail) {
+      ids.push(memberId);
+    }
+  });
+
+  return ids;
+}
+
 async function createTrip({ name, description, startDate, endDate, currency, createdBy, creatorName, creatorEmail }) {
   const tripRef = db.collection('trips').doc();
   const tripId = tripRef.id;
@@ -62,34 +82,59 @@ function listenUserTrips(uid, email, callback) {
 
 async function inviteMember(tripId, rawEmail) {
   const tripRef = db.collection('trips').doc(tripId);
-  const cleanEmail = (rawEmail || '').toLowerCase().trim();
+  const cleanEmail = normalizeEmail(rawEmail);
   if (!cleanEmail) return { found: false };
 
+  const tripDoc = await tripRef.get();
+  const tripData = tripDoc.exists ? tripDoc.data() : {};
+  const members = tripData.members || {};
+  const memberUids = tripData.memberUids || [];
+
   const usersSnap = await db.collection('users').where('email', '==', cleanEmail).get();
-  
+
   if (!usersSnap.empty) {
-    // User exists in Firestore users collection, add to trip members directly
     const userDoc = usersSnap.docs[0];
     const userData = userDoc.data();
     const uid = userDoc.id;
-    
-    await tripRef.update({
+
+    const updates = {
       [`members.${uid}`]: {
         name: userData.name || userData.displayName || cleanEmail.split('@')[0],
         email: cleanEmail,
         role: 'member',
         joinedAt: nowTimestamp()
       },
-      memberUids: firebase.firestore.FieldValue.arrayUnion(uid)
+      memberUids: firebase.firestore.FieldValue.arrayUnion(uid),
+      pendingInvites: firebase.firestore.FieldValue.arrayRemove(cleanEmail)
+    };
+
+    getMatchingPlaceholderIds(members, memberUids, cleanEmail).forEach((memberId) => {
+      updates[`members.${memberId}`] = firebase.firestore.FieldValue.delete();
     });
+
+    await tripRef.update(updates);
     return { found: true };
-  } else {
-    // User not in Firestore users collection yet (has not logged into web app)
+  }
+
+  const existingPlaceholderId = Object.entries(members).find(([memberId, memberData]) => {
+    if (!memberData) return false;
+    const isPlaceholder = memberData.isPlaceholder || memberId.startsWith('p_') || !memberUids.includes(memberId);
+    if (!isPlaceholder) return false;
+    return normalizeEmail(memberData.email) === cleanEmail;
+  })?.[0];
+
+  if (existingPlaceholderId) {
     await tripRef.update({
+      [`members.${existingPlaceholderId}.email`]: cleanEmail,
       pendingInvites: firebase.firestore.FieldValue.arrayUnion(cleanEmail)
     });
-    return { found: false };
+    return { found: false, existingPlaceholder: true, placeholderId: existingPlaceholderId };
   }
+
+  await tripRef.update({
+    pendingInvites: firebase.firestore.FieldValue.arrayUnion(cleanEmail)
+  });
+  return { found: false, existingPlaceholder: false, placeholderId: null };
 }
 
 async function removeMember(tripId, uid) {
@@ -121,66 +166,80 @@ async function archiveTrip(tripId) {
 
 async function checkPendingInvites(email, uid, name) {
   if (!email || !uid) return;
-  const cleanEmail = email.toLowerCase().trim();
+  const cleanEmail = normalizeEmail(email);
   const emailPrefix = cleanEmail.split('@')[0];
 
   try {
+    const pendingTripsSnap = await db.collection('trips')
+      .where('pendingInvites', 'array-contains', cleanEmail)
+      .get();
+
+    const processedTripIds = new Set();
+
+    for (const doc of pendingTripsSnap.docs) {
+      processedTripIds.add(doc.id);
+      const tripData = doc.data();
+      const tripId = doc.id;
+      const memberUids = tripData.memberUids || [];
+      if (memberUids.includes(uid)) continue;
+
+      const updates = {
+        [`members.${uid}`]: {
+          name: name || emailPrefix,
+          email: cleanEmail,
+          role: 'member',
+          joinedAt: nowTimestamp()
+        },
+        memberUids: firebase.firestore.FieldValue.arrayUnion(uid),
+        pendingInvites: firebase.firestore.FieldValue.arrayRemove(cleanEmail)
+      };
+
+      getMatchingPlaceholderIds(tripData.members || {}, memberUids, cleanEmail).forEach((memberId) => {
+        updates[`members.${memberId}`] = firebase.firestore.FieldValue.delete();
+      });
+
+      await db.collection('trips').doc(tripId).update(updates);
+    }
+
     const tripsSnap = await db.collection('trips').get();
     if (tripsSnap.empty) return;
 
     for (const doc of tripsSnap.docs) {
+      if (processedTripIds.has(doc.id)) continue;
+
       const tripId = doc.id;
       const tripData = doc.data();
       const members = tripData.members || {};
       const memberUids = tripData.memberUids || [];
-      const pendingInvites = (tripData.pendingInvites || []).map(e => (e || '').toLowerCase().trim());
 
       // If user is already a real member of this trip, skip
       if (memberUids.includes(uid)) continue;
 
-      const inPendingInvites = pendingInvites.includes(cleanEmail);
       let placeholderId = null;
 
       Object.entries(members).forEach(([mId, mData]) => {
         if (!mData) return;
-        // A member is ONLY a placeholder if they are NOT in memberUids array or marked as placeholder
         const isPlaceholder = mData.isPlaceholder || mId.startsWith('p_') || !memberUids.includes(mId);
 
-        if (isPlaceholder) {
-          const mEmail = (mData.email || '').toLowerCase().trim();
-          const mName  = (mData.name || '').toLowerCase().trim();
-          
-          if (mEmail && mEmail === cleanEmail) {
+        if (!isPlaceholder) return;
+
+        const mEmail = normalizeEmail(mData.email);
+        const mName  = normalizeEmail(mData.name);
+
+        if (mEmail && mEmail === cleanEmail) {
+          placeholderId = mId;
+        } else if (mName) {
+          const isNameExact = mName === cleanEmail || mName === emailPrefix;
+          const isNameSub = (emailPrefix.length >= 3 && mName.includes(emailPrefix)) ||
+                            (mName.length >= 3 && emailPrefix.includes(mName));
+          if (isNameExact || isNameSub) {
             placeholderId = mId;
-          } else if (mName) {
-            const isNameExact = mName === cleanEmail || mName === emailPrefix;
-            const isNameSub   = (emailPrefix.length >= 3 && mName.includes(emailPrefix)) || 
-                                (mName.length >= 3 && emailPrefix.includes(mName));
-            if (isNameExact || isNameSub) {
-              placeholderId = mId;
-            }
           }
         }
       });
 
       if (placeholderId) {
         await linkPlaceholderMember(tripId, placeholderId, uid, cleanEmail, name);
-        if (inPendingInvites) {
-          await db.collection('trips').doc(tripId).update({
-            pendingInvites: firebase.firestore.FieldValue.arrayRemove(cleanEmail)
-          });
-        }
-      } else if (inPendingInvites) {
-        await db.collection('trips').doc(tripId).update({
-          [`members.${uid}`]: {
-            name: name || emailPrefix,
-            email: cleanEmail,
-            role: 'member',
-            joinedAt: nowTimestamp()
-          },
-          memberUids: firebase.firestore.FieldValue.arrayUnion(uid),
-          pendingInvites: firebase.firestore.FieldValue.arrayRemove(cleanEmail)
-        });
       }
     }
   } catch (err) {
@@ -242,7 +301,7 @@ async function linkPlaceholderMember(tripId, placeholderId, realUid, realEmail, 
 
   // Batch update member map and replace placeholder in expenses
   const batch = db.batch();
-  batch.update(tripRef, {
+  const updates = {
     [`members.${realUid}`]: {
       name: name,
       email: email,
@@ -250,8 +309,20 @@ async function linkPlaceholderMember(tripId, placeholderId, realUid, realEmail, 
       joinedAt: existingMember.joinedAt || nowTimestamp()
     },
     [`members.${placeholderId}`]: firebase.firestore.FieldValue.delete(),
-    memberUids: firebase.firestore.FieldValue.arrayUnion(realUid)
+    memberUids: firebase.firestore.FieldValue.arrayUnion(realUid),
+    pendingInvites: firebase.firestore.FieldValue.arrayRemove(email)
+  };
+
+  Object.entries(tripData.members || {}).forEach(([memberId, memberData]) => {
+    if (!memberData) return;
+    const isPlaceholder = memberData.isPlaceholder || memberId.startsWith('p_') || !tripData.memberUids?.includes(memberId);
+    if (!isPlaceholder) return;
+    if (normalizeEmail(memberData.email) === normalizeEmail(email) && memberId !== placeholderId) {
+      updates[`members.${memberId}`] = firebase.firestore.FieldValue.delete();
+    }
   });
+
+  batch.update(tripRef, updates);
 
   // Re-link expenses where paidBy or splits referenced placeholderId
   const expensesSnap = await tripRef.collection('expenses').get();

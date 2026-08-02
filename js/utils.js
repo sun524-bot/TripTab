@@ -23,6 +23,15 @@ function parseAmount(str) {
   return isNaN(n) ? 0 : Math.round(n * 100) / 100;
 }
 
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 // ----------------------------------------------------------------
 //  Date Formatting
 // ----------------------------------------------------------------
