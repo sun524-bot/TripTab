@@ -617,7 +617,11 @@
       db.collection('trips').doc(tripId).onSnapshot(doc => {
         if (!doc.exists) {
           currentTrip = null;
-          if (!isDeleting) showToast('Trip not found', 'error');
+          if (isDeleting) {
+            console.log('[loadTrip] Trip doc deleted locally (latency compensation). Waiting for deleteTrip promise to resolve...');
+            return;
+          }
+          showToast('Trip not found', 'error');
           window.location.replace('dashboard.html');
           return;
         }
