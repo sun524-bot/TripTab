@@ -177,16 +177,29 @@
       document.getElementById('new-name-input').value = name;
     }
 
-    async function loadStats(user) {
-      const tripsSnap = await db.collection('trips').where('memberUids', 'array-contains', user.uid).get();
-      document.getElementById('stat-trips').textContent = tripsSnap.size;
+    function loadStats(user) {
+      if (!user) return;
       
-      let expCount = 0;
-      for (const tripDoc of tripsSnap.docs) {
-        const expSnap = await db.collection('trips').doc(tripDoc.id).collection('expenses').where('paidBy', '==', user.uid).get();
-        expCount += expSnap.size;
-      }
-      document.getElementById('stat-expenses').textContent = expCount;
+      db.collection('trips').where('memberUids', 'array-contains', user.uid).onSnapshot(async (tripsSnap) => {
+        if (!tripsSnap) return;
+        const activeTrips = tripsSnap.docs.filter(d => d.data()?.status !== 'archived');
+        document.getElementById('stat-trips').textContent = activeTrips.length;
+        
+        let expCount = 0;
+        for (const tripDoc of activeTrips) {
+          try {
+            const expSnap = await db.collection('trips').doc(tripDoc.id).collection('expenses').where('paidBy', '==', user.uid).get({ source: 'cache' }).catch(() => {
+              return db.collection('trips').doc(tripDoc.id).collection('expenses').where('paidBy', '==', user.uid).get();
+            });
+            if (expSnap) expCount += expSnap.size;
+          } catch (e) {
+            console.warn('[Offline Mode] Could not fetch profile expenses count:', e);
+          }
+        }
+        document.getElementById('stat-expenses').textContent = expCount;
+      }, (err) => {
+        console.warn('[Offline Mode] loadStats trips snapshot error:', err);
+      });
     }
 
     function openEditName() {

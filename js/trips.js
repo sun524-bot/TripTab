@@ -189,6 +189,7 @@ async function archiveTrip(tripId) {
 
 async function checkPendingInvites(email, uid, name) {
   if (!email || !uid) return;
+  if (typeof navigator !== 'undefined' && !navigator.onLine) return;
   const cleanEmail = normalizeEmail(email);
   const emailPrefix = cleanEmail.split('@')[0];
 
