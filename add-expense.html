@@ -333,45 +333,49 @@
     }
 
     async function loadForm() {
-      // Load trip to get members
-      const tripDoc = await db.collection('trips').doc(tripId).get();
-      if (!tripDoc.exists) return goBack();
-      tripData = tripDoc.data();
-      
-      const memberMap = tripData.members || {};
-      members = Object.entries(memberMap).map(([id, m]) => ({
-        id,
-        displayName: m.name || m.displayName || m.email || 'Member',
-        email: m.email || ''
-      }));
-      
-      renderPayerSelect();
-      renderSplitDetails();
-      
-      if (expenseId) {
-        const titleEl = document.getElementById('page-title');
-        titleEl.setAttribute('data-i18n', 'editExpense');
-        titleEl.textContent = i18n.t('editExpense');
-        updateSaveButtonLabel();
-        document.getElementById('delete-btn').classList.remove('hidden');
+      try {
+        // Load trip to get members
+        const tripDoc = await db.collection('trips').doc(tripId).get();
+        if (!tripDoc.exists) return goBack();
+        tripData = tripDoc.data();
         
-        const expDoc = await db.collection('trips').doc(tripId).collection('expenses').doc(expenseId).get();
-        if (expDoc.exists) {
-          const exp = expDoc.data();
-          document.getElementById('amount-input').value = exp.amount;
-          document.getElementById('title-input').value = exp.title;
-          document.getElementById('date-input').value = exp.date;
-          document.getElementById('notes-input').value = exp.notes || '';
+        const memberMap = tripData.members || {};
+        members = Object.entries(memberMap).map(([id, m]) => ({
+          id,
+          displayName: m.name || m.displayName || m.email || 'Member',
+          email: m.email || ''
+        }));
+        
+        renderPayerSelect();
+        renderSplitDetails();
+        
+        if (expenseId) {
+          const titleEl = document.getElementById('page-title');
+          titleEl.setAttribute('data-i18n', 'editExpense');
+          titleEl.textContent = i18n.t('editExpense');
+          updateSaveButtonLabel();
+          document.getElementById('delete-btn').classList.remove('hidden');
           
-          selectedCategory = exp.category || 'other';
-          setupCategoryGrid();
-          
-          selectedPayer = exp.paidBy;
-          existingReceiptUrls = Array.isArray(exp.photoUrls) ? exp.photoUrls : [];
-          renderReceiptGallery();
-          renderPayerSelect();
-          renderSplitDetails(); 
+          const expDoc = await db.collection('trips').doc(tripId).collection('expenses').doc(expenseId).get();
+          if (expDoc.exists) {
+            const exp = expDoc.data();
+            document.getElementById('amount-input').value = exp.amount;
+            document.getElementById('title-input').value = exp.title;
+            document.getElementById('date-input').value = exp.date;
+            document.getElementById('notes-input').value = exp.notes || '';
+            
+            selectedCategory = exp.category || 'other';
+            setupCategoryGrid();
+            
+            selectedPayer = exp.paidBy;
+            existingReceiptUrls = Array.isArray(exp.photoUrls) ? exp.photoUrls : [];
+            renderReceiptGallery();
+            renderPayerSelect();
+            renderSplitDetails(); 
+          }
         }
+      } catch (err) {
+        console.warn('[Offline Mode] Error loading expense form:', err);
       }
     }
 

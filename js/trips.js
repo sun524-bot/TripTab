@@ -67,16 +67,22 @@ function listenUserTrips(uid, email, callback) {
         const data = doc.data();
         let balance = { paid: 0, owed: 0, net: 0 };
         
-        // compute user's balance
-        const expensesSnap = await db.collection('trips').doc(doc.id).collection('expenses').get();
-        const expenses = expensesSnap.docs.map(e => ({ id: e.id, ...e.data() }));
-        if (typeof getUserBalance === 'function') {
-          balance = getUserBalance(uid, expenses);
+        try {
+          // compute user's balance
+          const expensesSnap = await db.collection('trips').doc(doc.id).collection('expenses').get();
+          const expenses = expensesSnap.docs.map(e => ({ id: e.id, ...e.data() }));
+          if (typeof getUserBalance === 'function') {
+            balance = getUserBalance(uid, expenses);
+          }
+        } catch (err) {
+          console.warn('[Offline Mode] Could not fetch subcollection expenses for balance calculation:', err);
         }
         
         trips.push({ id: doc.id, ...data, balance });
       }
       callback(trips);
+    }, (err) => {
+      console.warn('[Offline Mode] listenUserTrips snapshot error:', err);
     });
 }
 
@@ -90,9 +96,14 @@ async function inviteMember(tripId, rawEmail) {
   const members = tripData.members || {};
   const memberUids = tripData.memberUids || [];
 
-  const usersSnap = await db.collection('users').where('email', '==', cleanEmail).get();
+  let usersSnap = null;
+  try {
+    usersSnap = await db.collection('users').where('email', '==', cleanEmail).get();
+  } catch (err) {
+    console.warn('[Offline Mode] Users query skipped while offline:', err);
+  }
 
-  if (!usersSnap.empty) {
+  if (usersSnap && !usersSnap.empty) {
     const userDoc = usersSnap.docs[0];
     const userData = userDoc.data();
     const uid = userDoc.id;
@@ -373,6 +384,8 @@ function listenTripExpenses(tripId, callback) {
         ...doc.data()
       }));
       callback(expenses);
+    }, (err) => {
+      console.warn('[Offline Mode] listenTripExpenses snapshot error:', err);
     });
 }
 
