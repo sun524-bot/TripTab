@@ -1,4 +1,4 @@
-const CACHE_NAME = 'triptab-v15';
+const CACHE_NAME = 'triptab-v16';
 const ASSETS = [
   './',
   './dashboard.html',

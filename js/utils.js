@@ -293,6 +293,11 @@ function calculateSettlements(members, expenses) {
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js')
+      .then(() => {
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          window.location.reload();
+        });
+      })
       .catch(err => console.log('SW registration error:', err));
   });
 }
