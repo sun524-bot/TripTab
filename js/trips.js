@@ -61,26 +61,38 @@ async function getTrip(tripId) {
 function listenUserTrips(uid, email, callback) {
   return db.collection('trips')
     .where('memberUids', 'array-contains', uid)
-    .onSnapshot(async (snapshot) => {
+    .onSnapshot((snapshot) => {
       const trips = [];
-      for (const doc of snapshot.docs) {
+      snapshot.docs.forEach(doc => {
         const data = doc.data();
-        let balance = { paid: 0, owed: 0, net: 0 };
-        
+        if (data.status === 'archived') return;
+        trips.push({
+          id: doc.id,
+          ...data,
+          status: data.status || 'active',
+          balance: { paid: 0, owed: 0, net: 0 }
+        });
+      });
+
+      // Synchronously render trips on dashboard immediately
+      callback(trips);
+
+      // Asynchronously load subcollection balances from cache/network without blocking UI
+      snapshot.docs.forEach(async (doc) => {
         try {
-          // compute user's balance
-          const expensesSnap = await db.collection('trips').doc(doc.id).collection('expenses').get();
-          const expenses = expensesSnap.docs.map(e => ({ id: e.id, ...e.data() }));
-          if (typeof getUserBalance === 'function') {
-            balance = getUserBalance(uid, expenses);
+          const expSnap = await db.collection('trips').doc(doc.id).collection('expenses').get({ source: 'cache' }).catch(() => {
+            return db.collection('trips').doc(doc.id).collection('expenses').get();
+          });
+          const expenses = expSnap.docs.map(e => ({ id: e.id, ...e.data() }));
+          const targetTrip = trips.find(t => t.id === doc.id);
+          if (targetTrip && typeof getUserBalance === 'function') {
+            targetTrip.balance = getUserBalance(uid, expenses);
+            callback([...trips]);
           }
         } catch (err) {
-          console.warn('[Offline Mode] Could not fetch subcollection expenses for balance calculation:', err);
+          console.warn('[Offline Mode] Non-blocking balance update skipped:', err);
         }
-        
-        trips.push({ id: doc.id, ...data, balance });
-      }
-      callback(trips);
+      });
     }, (err) => {
       console.warn('[Offline Mode] listenUserTrips snapshot error:', err);
     });
