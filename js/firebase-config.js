@@ -28,7 +28,8 @@ function nowTimestamp() {
 // Enable offline persistence (works even without internet)
 db.enablePersistence({ synchronizeTabs: true }).catch(err => {
   if (err.code === 'failed-precondition') {
-    console.warn('TripTab: Multiple tabs open — offline mode disabled.');
+    console.warn('TripTab: Multiple tabs open — falling back to single-tab persistence.');
+    db.enablePersistence().catch(e => console.warn('TripTab persistence fallback error:', e));
   } else if (err.code === 'unimplemented') {
     console.warn('TripTab: Browser does not support offline mode.');
   }

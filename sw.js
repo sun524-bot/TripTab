@@ -1,4 +1,4 @@
-const CACHE_NAME = 'triptab-v12';
+const CACHE_NAME = 'triptab-v13';
 const ASSETS = [
   './',
   './dashboard.html',
@@ -41,19 +41,29 @@ self.addEventListener('fetch', event => {
   if (request.method !== 'GET') return;
 
   event.respondWith(
-    fetch(request)
-      .then(networkResponse => {
+    caches.match(request, { ignoreSearch: true }).then(cachedResponse => {
+      if (cachedResponse) {
+        // Return cached page/asset immediately (works 100% offline!)
+        fetch(request).then(networkResponse => {
+          if (networkResponse && networkResponse.status === 200) {
+            caches.open(CACHE_NAME).then(cache => cache.put(request, networkResponse));
+          }
+        }).catch(() => {/* Silent catch when offline */});
+
+        return cachedResponse;
+      }
+
+      return fetch(request).then(networkResponse => {
         if (networkResponse && networkResponse.status === 200) {
           const responseClone = networkResponse.clone();
           caches.open(CACHE_NAME).then(cache => cache.put(request, responseClone));
         }
         return networkResponse;
-      })
-      .catch(() => {
-        return caches.match(request).then(cachedResponse => {
-          if (cachedResponse) return cachedResponse;
-          if (request.mode === 'navigate') return caches.match('./dashboard.html');
-        });
-      })
+      });
+    }).catch(() => {
+      if (request.mode === 'navigate') {
+        return caches.match('./dashboard.html', { ignoreSearch: true });
+      }
+    })
   );
 });
