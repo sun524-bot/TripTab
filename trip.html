@@ -441,6 +441,7 @@
     let currentTrip = null;
     let currentUser = null;
     let tripMembers = {};
+    let cachedExpenses = [];       // populated by listenTripExpenses, read by loadTrip
     let currentExpenseViewMode = 'all';
     let selectedBreakdownUid = null;
     let isDeleting = false; // flag to suppress 'not found' toast on intentional delete
