@@ -28,7 +28,13 @@ function nowTimestamp() {
 // Enable offline persistence only in supported browser contexts.
 function initFirestorePersistence() {
   const isSupportedBrowser = typeof window !== 'undefined' && typeof indexedDB !== 'undefined' && location.protocol !== 'file:';
+  const isGitHubPagesHost = typeof location !== 'undefined' && /github\.io|pages\.dev/i.test(location.hostname);
+
   if (!isSupportedBrowser) return;
+  if (isGitHubPagesHost) {
+    console.warn('TripTab: Skipping Firestore persistence on GitHub Pages to avoid stale mobile cache behavior.');
+    return;
+  }
 
   db.enablePersistence({ synchronizeTabs: true }).catch(err => {
     if (err.code === 'failed-precondition') {

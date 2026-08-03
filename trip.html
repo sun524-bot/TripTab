@@ -1075,6 +1075,19 @@
 
     function handleConfirmDeleteTrip() {
       closeTripMenu();
+
+      if (!currentTrip || !currentUser) {
+        showToast('Trip is not ready to delete right now.', 'error');
+        return;
+      }
+
+      const tripMembers = currentTrip.members || {};
+      const isAdmin = tripMembers[currentUser.uid]?.role === 'admin' || currentTrip.createdBy === currentUser.uid;
+      if (!isAdmin) {
+        showToast('Only the trip admin can delete this trip.', 'error');
+        return;
+      }
+
       if (confirm('Are you sure you want to delete this trip and all its expenses? This action cannot be undone.')) {
         deleteTrip(tripId).then(() => {
           showToast('Trip deleted', 'success');

@@ -291,15 +291,20 @@ function calculateSettlements(members, expenses) {
 //  PWA Service Worker Registration
 // ----------------------------------------------------------------
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js')
-      .then(() => {
-        navigator.serviceWorker.addEventListener('controllerchange', () => {
-          window.location.reload();
-        });
-      })
-      .catch(err => console.log('SW registration error:', err));
-  });
+  const isGitHubPagesHost = typeof location !== 'undefined' && /github\.io|pages\.dev/i.test(location.hostname);
+  const isFileProtocol = typeof location !== 'undefined' && location.protocol === 'file:';
+
+  if (!isGitHubPagesHost && !isFileProtocol) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then(() => {
+          navigator.serviceWorker.addEventListener('controllerchange', () => {
+            window.location.reload();
+          });
+        })
+        .catch(err => console.log('SW registration error:', err));
+    });
+  }
 }
 
 function tsToDate(ts) {
