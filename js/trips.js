@@ -193,8 +193,8 @@ async function deleteTrip(tripId, uid) {
   // Step 1: Best-effort subcollection cleanup WHILE trip still exists (rules can evaluate)
   try {
     const [expensesSnap, settlementsSnap] = await Promise.all([
-      tripRef.collection('expenses').get(),
-      tripRef.collection('settlements').get()
+      db.collection('trips').doc(tripId).collection('expenses').get(),
+      db.collection('trips').doc(tripId).collection('settlements').get()
     ]);
 
     const docsToDelete = [
@@ -204,15 +204,18 @@ async function deleteTrip(tripId, uid) {
 
     console.log('[deleteTrip] Cleaning up', docsToDelete.length, 'subcollection docs...');
 
-    const CHUNK_SIZE = 499;
-    for (let i = 0; i < docsToDelete.length; i += CHUNK_SIZE) {
-      const chunk = docsToDelete.slice(i, i + CHUNK_SIZE);
-      const batch = db.batch();
-      chunk.forEach(ref => batch.delete(ref));
-      await batch.commit();
+    if (docsToDelete.length > 0) {
+      const CHUNK_SIZE = 499;
+      for (let i = 0; i < docsToDelete.length; i += CHUNK_SIZE) {
+        const chunk = docsToDelete.slice(i, i + CHUNK_SIZE);
+        const batch = db.batch();
+        chunk.forEach(ref => batch.delete(ref));
+        await batch.commit();
+      }
+      console.log('[deleteTrip] Subcollection cleanup complete.');
+    } else {
+      console.log('[deleteTrip] No subcollection docs to clean up.');
     }
-
-    console.log('[deleteTrip] Subcollection cleanup complete.');
   } catch (cleanupErr) {
     // Non-fatal: proceed to delete the trip document anyway
     console.warn('[deleteTrip] Subcollection cleanup failed (non-fatal):', cleanupErr);
