@@ -353,20 +353,20 @@
 /* Expense Row Card */
 .expense-item {
   display: flex;
-  align-items: center;
-  gap: var(--sp-3);
-  padding: var(--sp-4);
+  flex-direction: column;
+  padding: 14px 16px;
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: var(--r-md);
+  border-radius: var(--r-xl);
   transition: var(--t-base);
   cursor: pointer;
   text-decoration: none;
+  box-shadow: var(--shadow-sm);
 }
 .expense-item:hover {
   background: var(--bg-card-2);
   border-color: var(--border-2);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-md);
 }
 .expense-icon {
   width: 42px;

@@ -145,3 +145,38 @@ function groupExpensesByDate(expenses) {
     return b.date.localeCompare(a.date);
   });
 }
+
+function getMemberIndividualBreakdown(uid, expenses) {
+  let paidUpfront = 0;
+  let actualTotal = 0;
+  const items = [];
+
+  (expenses || []).forEach(exp => {
+    const isPayer = exp.paidBy === uid;
+    const myShare = (exp.splits && exp.splits[uid] != null) ? Number(exp.splits[uid]) : 0;
+
+    if (isPayer) {
+      paidUpfront += Number(exp.amount) || 0;
+    }
+
+    if (myShare > 0 || isPayer) {
+      actualTotal += myShare;
+      items.push({
+        ...exp,
+        myShare: Math.round(myShare * 100) / 100,
+        isPayer: isPayer
+      });
+    }
+  });
+
+  paidUpfront = Math.round(paidUpfront * 100) / 100;
+  actualTotal = Math.round(actualTotal * 100) / 100;
+  const net = Math.round((paidUpfront - actualTotal) * 100) / 100;
+
+  return {
+    paidUpfront,
+    actualTotal,
+    net,
+    items
+  };
+}

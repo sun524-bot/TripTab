@@ -87,11 +87,54 @@
     <!-- Tab panels -->
     <!-- EXPENSES TAB -->
     <div id="tab-expenses" class="tab-panel active container">
-      <div class="expense-list" id="expense-list"></div>
-      <div class="empty-state hidden" id="expenses-empty">
-        <div class="empty-state-icon">🧾</div>
-        <div class="empty-state-title" data-i18n="noExpensesYet">No expenses yet</div>
-        <p data-i18n="tapToAddExpense">Tap + to add the first expense</p>
+      <!-- Segment Control: All Expenses vs Personal Breakdown -->
+      <div class="expense-view-segment">
+        <button type="button" class="expense-view-btn active" id="btn-view-all" onclick="switchExpenseViewMode('all')" data-i18n="viewAllExpenses">All Expenses</button>
+        <button type="button" class="expense-view-btn" id="btn-view-breakdown" onclick="switchExpenseViewMode('breakdown')" data-i18n="personalBreakdown">Personal Breakdown</button>
+      </div>
+
+      <!-- ALL EXPENSES VIEW -->
+      <div id="expenses-all-view">
+        <div class="expense-list" id="expense-list"></div>
+        <div class="empty-state hidden" id="expenses-empty">
+          <div class="empty-state-icon">🧾</div>
+          <div class="empty-state-title" data-i18n="noExpensesYet">No expenses yet</div>
+          <p data-i18n="tapToAddExpense">Tap + to add the first expense</p>
+        </div>
+      </div>
+
+      <!-- PERSONAL BREAKDOWN VIEW -->
+      <div id="expenses-breakdown-view" class="hidden">
+        <!-- Member Selector Header (Admin dropdown or Member fixed name) -->
+        <div class="breakdown-header-card">
+          <div class="flex-row space-between align-center mb-2" style="display:flex; align-items:center; justify-content:space-between;">
+            <label style="font-weight: 700; font-size: 0.85rem; color: var(--text-2);" data-i18n="selectMember">Select Member</label>
+            <select id="breakdown-member-select" onchange="handleBreakdownMemberChange(this.value)" style="padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-body); color: var(--text-1); font-weight: 600; font-size: 0.85rem; max-width: 60%;">
+            </select>
+          </div>
+
+          <div class="breakdown-stats-grid">
+            <div class="breakdown-stat-item">
+              <div class="breakdown-stat-label" data-i18n="actualTotalExpense">Actual Total</div>
+              <div class="breakdown-stat-val text-coral" id="bd-stat-actual">RM 0.00</div>
+            </div>
+            <div class="breakdown-stat-item">
+              <div class="breakdown-stat-label" data-i18n="paidUpfront">Paid Upfront</div>
+              <div class="breakdown-stat-val" id="bd-stat-paid">RM 0.00</div>
+            </div>
+            <div class="breakdown-stat-item">
+              <div class="breakdown-stat-label" data-i18n="netBalance">Net Position</div>
+              <div class="breakdown-stat-val" id="bd-stat-net">RM 0.00</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Breakdown Expenses List -->
+        <div class="expense-list" id="breakdown-list"></div>
+        <div class="empty-state hidden" id="breakdown-empty">
+          <div class="empty-state-icon">📊</div>
+          <div class="empty-state-title" data-i18n="noIndividualExpenses">No individual expenses recorded</div>
+        </div>
       </div>
     </div>
 
@@ -372,6 +415,152 @@
     let currentTrip = null;
     let currentUser = null;
     let tripMembers = {};
+    let currentExpenseViewMode = 'all';
+    let selectedBreakdownUid = null;
+
+    function switchExpenseViewMode(mode) {
+      currentExpenseViewMode = mode;
+      const allBtn = document.getElementById('btn-view-all');
+      const bdBtn = document.getElementById('btn-view-breakdown');
+      const allView = document.getElementById('expenses-all-view');
+      const bdView = document.getElementById('expenses-breakdown-view');
+
+      if (mode === 'breakdown') {
+        if (allBtn) allBtn.classList.remove('active');
+        if (bdBtn) bdBtn.classList.add('active');
+        if (allView) allView.classList.add('hidden');
+        if (bdView) bdView.classList.remove('hidden');
+        renderIndividualBreakdown();
+      } else {
+        if (bdBtn) bdBtn.classList.remove('active');
+        if (allBtn) allBtn.classList.add('active');
+        if (bdView) bdView.classList.add('hidden');
+        if (allView) allView.classList.remove('hidden');
+      }
+    }
+
+    function populateBreakdownMemberSelect(isAdmin) {
+      const select = document.getElementById('breakdown-member-select');
+      if (!select) return;
+      select.innerHTML = '';
+
+      if (!selectedBreakdownUid || !tripMembers[selectedBreakdownUid]) {
+        selectedBreakdownUid = currentUser?.uid;
+      }
+
+      if (isAdmin) {
+        select.disabled = false;
+        Object.entries(tripMembers).forEach(([uid, mData]) => {
+          const mName = mData.name || mData.displayName || mData.email || 'Member';
+          const isMe = uid === currentUser?.uid;
+          const opt = document.createElement('option');
+          opt.value = uid;
+          opt.textContent = isMe ? `${mName} (${i18n.t('youSuffix') || 'You'})` : mName;
+          if (uid === selectedBreakdownUid) opt.selected = true;
+          select.appendChild(opt);
+        });
+      } else {
+        selectedBreakdownUid = currentUser?.uid;
+        const myData = tripMembers[currentUser?.uid] || {};
+        const myName = myData.name || myData.displayName || myData.email || 'Me';
+        const opt = document.createElement('option');
+        opt.value = currentUser?.uid;
+        opt.textContent = `${myName} (${i18n.t('youSuffix') || 'You'})`;
+        opt.selected = true;
+        select.appendChild(opt);
+        select.disabled = true;
+      }
+    }
+
+    function handleBreakdownMemberChange(uid) {
+      selectedBreakdownUid = uid;
+      renderIndividualBreakdown();
+    }
+
+    function viewMemberBreakdown(uid) {
+      switchTab('expenses');
+      switchExpenseViewMode('breakdown');
+      selectedBreakdownUid = uid;
+      const select = document.getElementById('breakdown-member-select');
+      if (select) select.value = uid;
+      renderIndividualBreakdown();
+    }
+
+    function renderIndividualBreakdown() {
+      if (!selectedBreakdownUid) selectedBreakdownUid = currentUser?.uid;
+      const targetUid = selectedBreakdownUid;
+      if (typeof getMemberIndividualBreakdown !== 'function') return;
+      const breakdown = getMemberIndividualBreakdown(targetUid, cachedExpenses);
+
+      // Update stat card
+      const actEl = document.getElementById('bd-stat-actual');
+      const paidEl = document.getElementById('bd-stat-paid');
+      const netEl = document.getElementById('bd-stat-net');
+      if (actEl) actEl.textContent = `RM ${breakdown.actualTotal.toFixed(2)}`;
+      if (paidEl) paidEl.textContent = `RM ${breakdown.paidUpfront.toFixed(2)}`;
+      if (netEl) {
+        const net = breakdown.net;
+        const sign = net > 0 ? '+' : '';
+        netEl.textContent = `RM ${sign}${net.toFixed(2)}`;
+        netEl.style.color = net > 0 ? '#22C55E' : (net < 0 ? '#EF4444' : 'var(--text-1)');
+      }
+
+      const list = document.getElementById('breakdown-list');
+      const empty = document.getElementById('breakdown-empty');
+      if (!list || !empty) return;
+      list.innerHTML = '';
+
+      if (!breakdown.items || breakdown.items.length === 0) {
+        empty.classList.remove('hidden');
+        return;
+      }
+      empty.classList.add('hidden');
+
+      let currentDate = '';
+      breakdown.items.forEach(exp => {
+        if (exp.date !== currentDate) {
+          currentDate = exp.date;
+          const dateHeader = document.createElement('div');
+          dateHeader.className = 'expense-date-header';
+          dateHeader.textContent = formatDate(currentDate);
+          list.appendChild(dateHeader);
+        }
+
+        const item = document.createElement('div');
+        item.className = 'expense-item card mb-2';
+        item.onclick = () => window.location.href = `add-expense.html?tripId=${tripId}&expenseId=${exp.id}`;
+
+        const payerData = tripMembers[exp.paidBy] || {};
+        const payerName = payerData.name || payerData.displayName || payerData.email || 'Someone';
+        const targetData = tripMembers[targetUid] || {};
+        const targetName = targetData.name || targetData.displayName || targetData.email || 'Member';
+        const isSelfTarget = targetUid === currentUser?.uid;
+
+        const catEmoji = typeof getCategoryEmoji === 'function' ? getCategoryEmoji(exp.category) : '🧾';
+        const content = document.createElement('div');
+        content.style.display = 'flex';
+        content.style.alignItems = 'flex-start';
+        content.style.justifyContent = 'space-between';
+        content.style.width = '100%';
+        content.style.gap = '12px';
+        content.style.minWidth = '0';
+        content.innerHTML = `
+          <div style="display:flex; align-items:flex-start; gap:12px; min-width:0; flex:1;">
+            <div style="width:40px; height:40px; border-radius:10px; background:var(--bg-hover); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:1.15rem; flex-shrink:0; margin-top:1px;">${catEmoji}</div>
+            <div style="min-width:0; flex:1;">
+              <div class="font-bold" style="font-size:0.95rem; line-height:1.3; color:var(--text-1); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(exp.title)}</div>
+              <div style="margin-top:4px; font-size:0.78rem; line-height:1.2; color:var(--text-3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(i18n.t('paidByLabel'))} ${escapeHtml(payerName)} (RM ${escapeHtml(Number(exp.amount).toFixed(2))})</div>
+            </div>
+          </div>
+          <div style="text-align:right; flex-shrink:0;">
+            <div class="font-bold text-coral" style="font-size:1.05rem; line-height:1.3;">RM ${escapeHtml(exp.myShare.toFixed(2))}</div>
+            <div style="margin-top:4px; font-size:0.75rem; line-height:1.2; color:var(--text-3); font-weight:500;">${isSelfTarget ? (i18n.t('yourShare') || 'Your Share') : `${escapeHtml(targetName)}${i18n.t('memberShareLabel') || "'s Share"}`}</div>
+          </div>
+        `;
+        item.appendChild(content);
+        list.appendChild(item);
+      });
+    }
 
     if (!tripId) {
       window.location.href = 'dashboard.html';
@@ -442,8 +631,10 @@
         const menuEditBtn = document.getElementById('menu-edit-trip-btn');
         if (menuEditBtn) menuEditBtn.classList.toggle('hidden', !isAdmin);
 
+        populateBreakdownMemberSelect(isAdmin);
         loadMembers(memberMap, isAdmin);
         calculateSettlements(cachedExpenses);
+        renderIndividualBreakdown();
       }, err => {
         console.error('loadTrip error:', err);
         // Firestore permission denied = not a member
@@ -484,6 +675,7 @@
         
         renderExpenses(expenses);
         calculateSettlements(expenses);
+        renderIndividualBreakdown();
       };
 
       query.orderBy('date', 'desc').onSnapshot(handleSnap, err => {
@@ -525,16 +717,25 @@
         const payerName = payerData.name || payerData.displayName || payerData.email || 'Someone';
         const photoUrls = Array.isArray(exp.photoUrls) ? exp.photoUrls : [];
 
+        const catEmoji = typeof getCategoryEmoji === 'function' ? getCategoryEmoji(exp.category) : '🧾';
         const content = document.createElement('div');
-        content.className = 'flex justify-between items-center';
+        content.style.display = 'flex';
+        content.style.alignItems = 'flex-start';
+        content.style.justifyContent = 'space-between';
+        content.style.width = '100%';
+        content.style.gap = '12px';
+        content.style.minWidth = '0';
         content.innerHTML = `
-          <div>
-            <div class="font-bold">${escapeHtml(exp.title)}</div>
-            <div class="text-sm text-gray-500">${escapeHtml(i18n.t('paidByLabel'))} ${escapeHtml(payerName)}</div>
+          <div style="display:flex; align-items:flex-start; gap:12px; min-width:0; flex:1;">
+            <div style="width:40px; height:40px; border-radius:10px; background:var(--bg-hover); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:1.15rem; flex-shrink:0; margin-top:1px;">${catEmoji}</div>
+            <div style="min-width:0; flex:1;">
+              <div class="font-bold" style="font-size:0.95rem; line-height:1.3; color:var(--text-1); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(exp.title)}</div>
+              <div style="margin-top:4px; font-size:0.78rem; line-height:1.2; color:var(--text-3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(i18n.t('paidByLabel'))} ${escapeHtml(payerName)}</div>
+            </div>
           </div>
-          <div class="text-right">
-            <div class="font-bold text-coral">RM ${escapeHtml(exp.amount.toFixed(2))}</div>
-            ${mySplit > 0 ? `<div class="text-xs text-gray-500">${escapeHtml(i18n.t('youOweLabel'))} RM ${escapeHtml(mySplit.toFixed(2))}</div>` : ''}
+          <div style="text-align:right; flex-shrink:0;">
+            <div class="font-bold text-coral" style="font-size:1.05rem; line-height:1.3;">RM ${escapeHtml(exp.amount.toFixed(2))}</div>
+            ${mySplit > 0 ? `<div style="margin-top:4px; font-size:0.75rem; line-height:1.2; color:var(--text-3); font-weight:500;">${escapeHtml(i18n.t('youOweLabel'))} RM ${escapeHtml(mySplit.toFixed(2))}</div>` : ''}
           </div>
         `;
         item.appendChild(content);
@@ -606,42 +807,53 @@
         const isMe = uid === currentUser?.uid;
 
         const row = document.createElement('div');
-        row.className = 'member-row card mb-2 p-3 flex-row align-center space-between';
+        row.className = 'member-card card mb-3 p-3';
         row.style.background = 'var(--bg-card)';
-        row.style.borderRadius = '12px';
+        row.style.borderRadius = '14px';
         row.style.border = '1px solid var(--border)';
+        row.style.boxShadow = 'var(--shadow-sm)';
 
-        let badge = `<span class="member-role">${role}</span>`;
+        let badge = `<span class="member-role" style="font-size:0.75rem; padding:2px 8px; border-radius:10px; background:var(--coral-a); color:var(--coral); font-weight:600;">${escapeHtml(role)}</span>`;
         if (isPlaceholder) {
-          badge = `<span class="badge badge-neutral" style="font-size:0.75rem;padding:2px 8px;border-radius:10px;background:var(--bg-body);color:var(--text-2);">${i18n.t('virtualBadge')}</span>`;
+          badge = `<span class="badge badge-neutral" style="font-size:0.75rem; padding:2px 8px; border-radius:10px; background:var(--bg-hover); color:var(--text-2); font-weight:600;">${escapeHtml(i18n.t('virtualBadge'))}</span>`;
         }
 
-        let actionBtns = '';
+        const viewSpendingBtn = (isAdmin || isMe)
+          ? `<button class="btn btn-sm btn-secondary" onclick="viewMemberBreakdown('${uid}')" style="padding: 5px 10px; font-size: 0.75rem; border-radius: 8px; white-space: nowrap; font-weight: 600;">📊 ${escapeHtml(i18n.t('viewSpending') || 'Spending')}</button>`
+          : '';
+
+        let editBtn = '';
+        let removeBtn = '';
+
         if (isAdmin && !isMe) {
-          const editBtn = isPlaceholder
-            ? `<button class="btn btn-sm btn-secondary ml-2" onclick="openEditMemberModal('${uid}', '${name.replace(/'/g, "\\'").replace(/"/g, '&quot;')}', '${email}')" title="Edit member" style="margin-right:4px;">
-                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-              </button>`
-            : '';
-          const removeBtn = `<button class="btn btn-sm btn-danger ml-2" onclick="handleRemoveMember('${uid}', '${name.replace(/'/g, "\\'").replace(/"/g, '&quot;')}')" title="${i18n.t('removeMemberTitle')}">
+          if (isPlaceholder) {
+            editBtn = `<button class="btn btn-sm btn-secondary" onclick="openEditMemberModal('${uid}', '${name.replace(/'/g, "\\'").replace(/"/g, '&quot;')}', '${email}')" title="Edit member" style="padding: 5px 8px; border-radius: 8px;">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>`;
+          }
+          removeBtn = `<button class="btn btn-sm btn-danger" onclick="handleRemoveMember('${uid}', '${name.replace(/'/g, "\\'").replace(/"/g, '&quot;')}')" title="${i18n.t('removeMemberTitle')}" style="padding: 5px 8px; border-radius: 8px;">
             <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/></svg>
           </button>`;
-          actionBtns = `<div style="display:flex;align-items:center;gap:4px;">${editBtn}${removeBtn}</div>`;
         }
 
-        const loginHint = '';
-
         row.innerHTML = `
-          <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;">
-            <div class="avatar avatar-sm" style="background:${avatarColor(uid)};flex-shrink:0;">${escapeHtml(getInitials(name))}</div>
-            <div class="member-info" style="min-width:0;">
-              <div class="member-name font-bold" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(name)}${isMe ? ` ${escapeHtml(i18n.t('youSuffix'))}` : ''}</div>
-              <div class="member-email text-muted" style="font-size:0.75rem;">${escapeHtml(email || '')}</div>
-              ${loginHint}
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; width:100%; min-width:0;">
+            <div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">
+              <div class="avatar avatar-sm" style="background:${avatarColor(uid)}; flex-shrink:0;">${escapeHtml(getInitials(name))}</div>
+              <div style="min-width:0; flex:1;">
+                <div class="font-bold" style="font-size:0.92rem; color:var(--text-1); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                  ${escapeHtml(name)}${isMe ? ` <span style="font-size:0.75rem; color:var(--text-3); font-weight:normal;">(${escapeHtml(i18n.t('youSuffix') || 'You')})</span>` : ''}
+                </div>
+                ${email ? `<div style="font-size:0.75rem; color:var(--text-3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px;">${escapeHtml(email)}</div>` : ''}
+              </div>
             </div>
-            ${badge}
+            <div style="flex-shrink:0;">${badge}</div>
           </div>
-          ${actionBtns}
+          <div style="display:flex; align-items:center; justify-content:flex-end; gap:6px; margin-top:10px; padding-top:8px; border-top:1px solid var(--border);">
+            ${viewSpendingBtn}
+            ${editBtn}
+            ${removeBtn}
+          </div>
         `;
         list.appendChild(row);
       });
