@@ -111,6 +111,9 @@ const TRANSLATIONS = {
     receiptsPhotos: 'Receipts / Photos',
     addPhotos: 'Add Photos',
     noPhotosYet: 'No photos attached yet',
+    downloadAsImage: 'Download as Image',
+    generatingImage: 'Generating Image...',
+    imageDownloaded: 'Image saved to downloads!',
 
     // Categories
     catFood: 'Food',
@@ -387,6 +390,9 @@ const TRANSLATIONS = {
     receiptsPhotos: '收据 / 照片',
     addPhotos: '+ 添加照片',
     noPhotosYet: '暂无附加照片',
+    downloadAsImage: '保存为图片',
+    generatingImage: '正在生成图片...',
+    imageDownloaded: '图片已保存！',
 
     // Categories
     catFood: '餐饮',
