@@ -488,6 +488,52 @@
       });
     }
 
+    function updateCustomSplitBalance() {
+      const amount = parseFloat(document.getElementById('amount-input').value) || 0;
+      const currency = tripData?.currency || 'MYR';
+      let currentTotal = 0;
+
+      document.querySelectorAll('[data-custom-split]').forEach(input => {
+        currentTotal += parseFloat(input.value) || 0;
+      });
+
+      const remaining = amount - currentTotal;
+      const counterCard = document.getElementById('custom-balance-counter');
+      if (!counterCard) return;
+
+      if (Math.abs(remaining) < 0.01) {
+        counterCard.style.background = 'rgba(34, 197, 94, 0.12)';
+        counterCard.style.borderColor = 'rgba(34, 197, 94, 0.3)';
+        counterCard.innerHTML = `
+          <div style="display:flex; justify-space-between; align-items:center;">
+            <span style="font-weight:700; color:#22C55E; font-size:0.85rem;">✓ ${escapeHtml(i18n.t('fullyAllocated') || 'Fully allocated')}</span>
+            <span style="font-weight:700; color:var(--text-1); font-size:0.85rem;">${currency} ${currentTotal.toFixed(2)} / ${amount.toFixed(2)}</span>
+          </div>
+        `;
+      } else if (remaining > 0) {
+        counterCard.style.background = 'var(--coral-a)';
+        counterCard.style.borderColor = 'var(--coral)';
+        counterCard.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-weight:600; color:var(--coral); font-size:0.85rem;">${escapeHtml(i18n.t('remainingToAllocate') || 'Remaining to allocate')}:</span>
+            <span style="font-weight:800; color:var(--coral); font-size:0.95rem;">${currency} ${remaining.toFixed(2)}</span>
+          </div>
+          <div style="font-size:0.75rem; color:var(--text-3); margin-top:2px;">${escapeHtml(i18n.t('allocatedTotal') || 'Allocated')}: ${currency} ${currentTotal.toFixed(2)} / ${amount.toFixed(2)}</div>
+        `;
+      } else {
+        const over = Math.abs(remaining);
+        counterCard.style.background = 'rgba(239, 68, 68, 0.12)';
+        counterCard.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+        counterCard.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-weight:600; color:#EF4444; font-size:0.85rem;">⚠️ ${escapeHtml(i18n.t('overAllocated') || 'Over allocated by')}:</span>
+            <span style="font-weight:800; color:#EF4444; font-size:0.95rem;">${currency} ${over.toFixed(2)}</span>
+          </div>
+          <div style="font-size:0.75rem; color:var(--text-3); margin-top:2px;">${escapeHtml(i18n.t('allocatedTotal') || 'Allocated')}: ${currency} ${currentTotal.toFixed(2)} / ${amount.toFixed(2)}</div>
+        `;
+      }
+    }
+
     function renderSplitDetails() {
       const details = document.getElementById('split-details');
       if (!details) return;
@@ -507,6 +553,16 @@
         const text = i18n.t('splitEquallyAmongText', { count, currency, perPerson });
         details.innerHTML = `<div class="text-center p-3 text-muted" style="font-size:0.85rem; background:var(--bg-hover); border-radius:10px; border:1px solid var(--border);">${text}</div>`;
       } else if (splitType === 'custom') {
+        const counterCard = document.createElement('div');
+        counterCard.id = 'custom-balance-counter';
+        counterCard.style.padding = '10px 12px';
+        counterCard.style.marginBottom = '10px';
+        counterCard.style.borderRadius = '10px';
+        counterCard.style.border = '1.5px solid var(--coral)';
+        counterCard.style.background = 'var(--coral-a)';
+        counterCard.style.transition = 'all 0.2s ease';
+        details.appendChild(counterCard);
+
         members.forEach(m => {
           const row = document.createElement('div');
           row.style.display = 'flex';
@@ -524,11 +580,17 @@
             </div>
             <div style="display:flex; align-items:center; gap:4px;">
               <span style="font-size:0.8rem; color:var(--text-3);">${currency}</span>
-              <input type="number" class="form-input" style="width:100px; padding:6px 10px; font-size:0.85rem; font-weight:600; text-align:right;" placeholder="0.00" step="0.01" data-custom-split="${m.id}" />
+              <input type="number" class="form-input custom-split-input" style="width:100px; padding:6px 10px; font-size:0.85rem; font-weight:600; text-align:right;" placeholder="0.00" step="0.01" data-custom-split="${m.id}" />
             </div>
           `;
           details.appendChild(row);
         });
+
+        document.querySelectorAll('[data-custom-split]').forEach(input => {
+          input.addEventListener('input', updateCustomSplitBalance);
+        });
+
+        updateCustomSplitBalance();
       } else if (splitType === 'selective') {
         members.forEach(m => {
           const row = document.createElement('div');

@@ -114,6 +114,10 @@ const TRANSLATIONS = {
     downloadAsImage: 'Download as Image',
     generatingImage: 'Generating Image...',
     imageDownloaded: 'Image saved to downloads!',
+    remainingToAllocate: 'Remaining to allocate',
+    allocatedTotal: 'Allocated',
+    fullyAllocated: 'Fully allocated',
+    overAllocated: 'Over allocated by',
 
     // Categories
     catFood: 'Food',
@@ -393,6 +397,10 @@ const TRANSLATIONS = {
     downloadAsImage: '保存为图片',
     generatingImage: '正在生成图片...',
     imageDownloaded: '图片已保存！',
+    remainingToAllocate: '尚余未分摊',
+    allocatedTotal: '已分摊',
+    fullyAllocated: '已全部分摊',
+    overAllocated: '超出分摊金额',
 
     // Categories
     catFood: '餐饮',
