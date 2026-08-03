@@ -1,4 +1,4 @@
-const CACHE_NAME = 'triptab-v13';
+const CACHE_NAME = 'triptab-v14';
 const ASSETS = [
   './',
   './dashboard.html',
@@ -40,15 +40,35 @@ self.addEventListener('fetch', event => {
   const { request } = event;
   if (request.method !== 'GET') return;
 
+  // HTML Page Navigation: Network-First, fallback to Cache
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
+        .then(networkResponse => {
+          if (networkResponse && networkResponse.status === 200) {
+            const responseClone = networkResponse.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(request, responseClone));
+          }
+          return networkResponse;
+        })
+        .catch(() => {
+          return caches.match(request, { ignoreSearch: true }).then(cached => {
+            return cached || caches.match('./dashboard.html', { ignoreSearch: true });
+          });
+        })
+    );
+    return;
+  }
+
+  // Static Assets (CSS, JS, Images, Fonts): Cache-First
   event.respondWith(
     caches.match(request, { ignoreSearch: true }).then(cachedResponse => {
       if (cachedResponse) {
-        // Return cached page/asset immediately (works 100% offline!)
         fetch(request).then(networkResponse => {
           if (networkResponse && networkResponse.status === 200) {
             caches.open(CACHE_NAME).then(cache => cache.put(request, networkResponse));
           }
-        }).catch(() => {/* Silent catch when offline */});
+        }).catch(() => {/* Silent catch offline */});
 
         return cachedResponse;
       }
@@ -60,10 +80,6 @@ self.addEventListener('fetch', event => {
         }
         return networkResponse;
       });
-    }).catch(() => {
-      if (request.mode === 'navigate') {
-        return caches.match('./dashboard.html', { ignoreSearch: true });
-      }
     })
   );
 });

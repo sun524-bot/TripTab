@@ -613,6 +613,10 @@
     function loadTrip(user) {
       db.collection('trips').doc(tripId).onSnapshot(doc => {
         if (!doc.exists) {
+          if (doc.metadata && doc.metadata.fromCache) {
+            console.warn('[Offline Mode] Trip document pending local cache resolution...');
+            return;
+          }
           showToast('Trip not found');
           window.location.href = 'dashboard.html';
           return;
