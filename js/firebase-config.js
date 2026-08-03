@@ -25,12 +25,23 @@ function nowTimestamp() {
   return firebase.firestore.FieldValue.serverTimestamp();
 }
 
-// Enable offline persistence (works even without internet)
-db.enablePersistence({ synchronizeTabs: true }).catch(err => {
-  if (err.code === 'failed-precondition') {
-    console.warn('TripTab: Multiple tabs open — falling back to single-tab persistence.');
-    db.enablePersistence().catch(e => console.warn('TripTab persistence fallback error:', e));
-  } else if (err.code === 'unimplemented') {
-    console.warn('TripTab: Browser does not support offline mode.');
-  }
-});
+// Enable offline persistence only in supported browser contexts.
+function initFirestorePersistence() {
+  const isSupportedBrowser = typeof window !== 'undefined' && typeof indexedDB !== 'undefined' && location.protocol !== 'file:';
+  if (!isSupportedBrowser) return;
+
+  db.enablePersistence({ synchronizeTabs: true }).catch(err => {
+    if (err.code === 'failed-precondition') {
+      console.warn('TripTab: Multiple tabs open — falling back to single-tab persistence.');
+      db.enablePersistence().catch(e => console.warn('TripTab persistence fallback error:', e));
+    } else if (err.code === 'unimplemented') {
+      console.warn('TripTab: Browser does not support offline mode.');
+    } else {
+      console.warn('TripTab: Firestore persistence not enabled:', err?.message || err);
+    }
+  });
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('load', initFirestorePersistence);
+}

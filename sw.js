@@ -1,4 +1,4 @@
-const CACHE_NAME = 'triptab-v16';
+const CACHE_NAME = 'triptab-v17';
 const ASSETS = [
   './',
   './dashboard.html',
@@ -39,6 +39,11 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const { request } = event;
   if (request.method !== 'GET') return;
+
+  const requestUrl = new URL(request.url);
+  if (requestUrl.origin !== self.location.origin) {
+    return;
+  }
 
   // HTML Page Navigation: Network-First, fallback to Cache
   if (request.mode === 'navigate') {
