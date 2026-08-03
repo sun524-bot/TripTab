@@ -169,31 +169,61 @@ async function removeMember(tripId, uid) {
 }
 
 async function deleteTrip(tripId, uid) {
+  console.log('[deleteTrip] Starting. tripId:', tripId, 'uid:', uid);
+
+  if (!tripId) throw new Error('No trip ID provided.');
+  if (!uid) throw new Error('No user ID provided. Are you logged in?');
+
   const tripRef = db.collection('trips').doc(tripId);
   const tripDoc = await tripRef.get();
+  console.log('[deleteTrip] Trip doc exists:', tripDoc.exists);
+
   if (!tripDoc.exists) {
     throw new Error('Trip not found');
   }
 
   const tripData = tripDoc.data() || {};
+  console.log('[deleteTrip] createdBy:', tripData.createdBy, 'uid:', uid, 'memberRole:', tripData.members?.[uid]?.role);
+
   const isAdmin = tripData.createdBy === uid || tripData.members?.[uid]?.role === 'admin';
   if (!isAdmin) {
     throw new Error('You do not have permission to delete this trip.');
   }
 
-  const [expensesSnap, settlementsSnap] = await Promise.all([
-    tripRef.collection('expenses').get(),
-    tripRef.collection('settlements').get()
-  ]);
+  // Step 1: Best-effort subcollection cleanup WHILE trip still exists (rules can evaluate)
+  try {
+    const [expensesSnap, settlementsSnap] = await Promise.all([
+      tripRef.collection('expenses').get(),
+      tripRef.collection('settlements').get()
+    ]);
 
-  const batch = db.batch();
+    const docsToDelete = [
+      ...expensesSnap.docs.map(d => d.ref),
+      ...settlementsSnap.docs.map(d => d.ref)
+    ];
 
-  expensesSnap.forEach(doc => batch.delete(doc.ref));
-  settlementsSnap.forEach(doc => batch.delete(doc.ref));
-  batch.delete(tripRef);
+    console.log('[deleteTrip] Cleaning up', docsToDelete.length, 'subcollection docs...');
 
-  await batch.commit();
+    const CHUNK_SIZE = 499;
+    for (let i = 0; i < docsToDelete.length; i += CHUNK_SIZE) {
+      const chunk = docsToDelete.slice(i, i + CHUNK_SIZE);
+      const batch = db.batch();
+      chunk.forEach(ref => batch.delete(ref));
+      await batch.commit();
+    }
+
+    console.log('[deleteTrip] Subcollection cleanup complete.');
+  } catch (cleanupErr) {
+    // Non-fatal: proceed to delete the trip document anyway
+    console.warn('[deleteTrip] Subcollection cleanup failed (non-fatal):', cleanupErr);
+  }
+
+  // Step 2: Delete the trip document — removes it from dashboard & Firebase
+  console.log('[deleteTrip] Deleting trip document...');
+  await tripRef.delete();
+  console.log('[deleteTrip] Trip document deleted successfully.');
 }
+
 
 async function archiveTrip(tripId) {
   await db.collection('trips').doc(tripId).update({
