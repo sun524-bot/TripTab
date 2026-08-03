@@ -20,8 +20,11 @@ service cloud.firestore {
     }
 
     function isParentTripAdmin(tripId) {
-      return isAuth() &&
-        get(/databases/$(database)/documents/trips/$(tripId)).data.members[request.auth.uid].role == 'admin';
+      const tripData = get(/databases/$(database)/documents/trips/$(tripId)).data;
+      return isAuth() && (
+        tripData.createdBy == request.auth.uid ||
+        (tripData.members[request.auth.uid] != null && tripData.members[request.auth.uid].role == 'admin')
+      );
     }
 
     // ----------------------------------------------------------------
@@ -43,7 +46,10 @@ service cloud.firestore {
       allow read: if isAuth();
       allow create: if isAuth();
       allow update: if isAuth();
-      allow delete: if isAuth() && (resource.data.members[request.auth.uid].role == 'admin' || resource.data.createdBy == request.auth.uid);
+      allow delete: if isAuth() && (
+        resource.data.createdBy == request.auth.uid ||
+        (resource.data.members[request.auth.uid] != null && resource.data.members[request.auth.uid].role == 'admin')
+      );
 
       // ----------------------------------------------------------------
       // Expenses subcollection

@@ -168,16 +168,30 @@ async function removeMember(tripId, uid) {
   });
 }
 
-async function deleteTrip(tripId) {
-  // Delete all expenses first
-  const expensesSnap = await db.collection('trips').doc(tripId).collection('expenses').get();
+async function deleteTrip(tripId, uid) {
+  const tripRef = db.collection('trips').doc(tripId);
+  const tripDoc = await tripRef.get();
+  if (!tripDoc.exists) {
+    throw new Error('Trip not found');
+  }
+
+  const tripData = tripDoc.data() || {};
+  const isAdmin = tripData.createdBy === uid || tripData.members?.[uid]?.role === 'admin';
+  if (!isAdmin) {
+    throw new Error('You do not have permission to delete this trip.');
+  }
+
+  const [expensesSnap, settlementsSnap] = await Promise.all([
+    tripRef.collection('expenses').get(),
+    tripRef.collection('settlements').get()
+  ]);
+
   const batch = db.batch();
-  expensesSnap.forEach(doc => {
-    batch.delete(doc.ref);
-  });
-  
-  // Delete trip doc
-  batch.delete(db.collection('trips').doc(tripId));
+
+  expensesSnap.forEach(doc => batch.delete(doc.ref));
+  settlementsSnap.forEach(doc => batch.delete(doc.ref));
+  batch.delete(tripRef);
+
   await batch.commit();
 }
 

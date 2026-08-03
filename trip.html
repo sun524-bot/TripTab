@@ -1089,12 +1089,12 @@
       }
 
       if (confirm('Are you sure you want to delete this trip and all its expenses? This action cannot be undone.')) {
-        deleteTrip(tripId).then(() => {
+        deleteTrip(tripId, currentUser?.uid).then(() => {
           showToast('Trip deleted', 'success');
           window.location.replace('dashboard.html');
         }).catch(err => {
           console.error(err);
-          showToast('Error deleting trip', 'error');
+          showToast(err?.message || 'Error deleting trip', 'error');
         });
       }
     }
