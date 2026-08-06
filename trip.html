@@ -703,6 +703,11 @@
         expenses.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
         cachedExpenses = expenses;
         
+        // Round to avoid floating point noise (e.g. -0.00)
+        total = Math.round(total * 100) / 100;
+        userBalance = Math.round(userBalance * 100) / 100;
+        if (userBalance === 0) userBalance = 0; // Avoid negative zero
+        
         document.getElementById('stat-total').textContent = `RM ${total.toFixed(2)}`;
         document.getElementById('stat-balance').textContent = `RM ${userBalance.toFixed(2)}`;
         
@@ -1185,6 +1190,14 @@
         }
       });
       
+      // Round to 2 decimal places to avoid floating point noise (e.g. -0.00)
+      Object.keys(balances).forEach(uid => {
+        balances[uid] = Math.round(balances[uid] * 100) / 100;
+        if (balances[uid] === 0) {
+          balances[uid] = 0; // Avoid negative zero
+        }
+      });
+      
       if (isSimplifyDebts) {
         renderSettlement(balances);
       } else {
@@ -1252,11 +1265,11 @@
           const u2 = uids[j];
           const u1_owes_u2 = pairwise[u1][u2] || 0;
           const u2_owes_u1 = pairwise[u2][u1] || 0;
-          const diff = u1_owes_u2 - u2_owes_u1;
+          const diff = Math.round((u1_owes_u2 - u2_owes_u1) * 100) / 100;
 
-          if (diff > 0.01) {
+          if (diff > 0.005) {
             directTransactions.push({ from: u1, to: u2, amount: diff });
-          } else if (diff < -0.01) {
+          } else if (diff < -0.005) {
             directTransactions.push({ from: u2, to: u1, amount: -diff });
           }
         }
@@ -1323,8 +1336,8 @@
         `;
         bRows.appendChild(row);
         
-        if (b < -0.01) debtors.push({uid, amount: -b});
-        if (b > 0.01) creditors.push({uid, amount: b});
+        if (b < 0) debtors.push({uid, amount: -b});
+        if (b > 0) creditors.push({uid, amount: b});
       });
       
       // Greedy settlement algorithm
@@ -1336,18 +1349,21 @@
         let creditor = creditors[j];
         
         let amount = Math.min(debtor.amount, creditor.amount);
+        amount = Math.round(amount * 100) / 100;
         
-        transactions.push({
-          from: debtor.uid,
-          to: creditor.uid,
-          amount: amount
-        });
+        if (amount > 0) {
+          transactions.push({
+            from: debtor.uid,
+            to: creditor.uid,
+            amount: amount
+          });
+        }
         
-        debtor.amount -= amount;
-        creditor.amount -= amount;
+        debtor.amount = Math.round((debtor.amount - amount) * 100) / 100;
+        creditor.amount = Math.round((creditor.amount - amount) * 100) / 100;
         
-        if (debtor.amount < 0.01) i++;
-        if (creditor.amount < 0.01) j++;
+        if (debtor.amount < 0.005) i++;
+        if (creditor.amount < 0.005) j++;
       }
       
       if (transactions.length === 0) {
@@ -1434,13 +1450,16 @@
         }
       });
 
-      // Render Summary Formula Box
-      const directNet = totalPaidByToForFrom - totalPaidByFromForTo;
-      const diff = Math.abs(netAmount - directNet);
+      // Round to 2 decimal places to avoid floating point noise (e.g. -0.00)
+      netAmount = Math.round(netAmount * 100) / 100;
+      totalPaidByToForFrom = Math.round(totalPaidByToForFrom * 100) / 100;
+      totalPaidByFromForTo = Math.round(totalPaidByFromForTo * 100) / 100;
+      const directNet = Math.round((totalPaidByToForFrom - totalPaidByFromForTo) * 100) / 100;
+      const diff = Math.round(Math.abs(netAmount - directNet) * 100) / 100;
       const summaryBox = document.getElementById('sd-summary-box');
 
       if (summaryBox) {
-        if (diff > 0.01) {
+        if (diff > 0.005) {
           summaryBox.innerHTML = `
             <div style="font-size: 0.85rem; display: flex; flex-direction: column; gap: 6px;">
               <div class="flex-row space-between align-center" style="display:flex;justify-content:space-between;">

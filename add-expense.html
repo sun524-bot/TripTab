@@ -256,6 +256,7 @@
     let splitType = 'equal';
     let selectedReceiptFiles = [];
     let existingReceiptUrls = [];
+    let loadedExpenseSplits = null;
     
     const categories = [
       { id: 'food', icon: '🍔', key: 'catFood' },
@@ -365,6 +366,7 @@
           const expDoc = await db.collection('trips').doc(tripId).collection('expenses').doc(expenseId).get();
           if (expDoc.exists) {
             const exp = expDoc.data();
+            loadedExpenseSplits = exp.splits || null;
             document.getElementById('amount-input').value = exp.amount;
             document.getElementById('title-input').value = exp.title;
             document.getElementById('date-input').value = exp.date;
@@ -375,6 +377,31 @@
             
             selectedPayer = exp.paidBy;
             existingReceiptUrls = Array.isArray(exp.photoUrls) ? exp.photoUrls : [];
+            
+            // Auto-detect splitType if splits exist
+            if (loadedExpenseSplits) {
+              const uids = Object.keys(loadedExpenseSplits);
+              const values = Object.values(loadedExpenseSplits).map(Number);
+              const uniqueValues = new Set(values);
+              
+              if (uids.length < members.length) {
+                splitType = 'selective';
+              } else if (uniqueValues.size > 1) {
+                splitType = 'custom';
+              } else {
+                splitType = 'equal';
+              }
+              
+              // Update split tabs active state
+              document.querySelectorAll('.split-btn').forEach(btn => {
+                if (btn.dataset.split === splitType) {
+                  btn.classList.add('active');
+                } else {
+                  btn.classList.remove('active');
+                }
+              });
+            }
+            
             renderReceiptGallery();
             renderPayerSelect();
             renderSplitDetails(); 
@@ -490,23 +517,24 @@
     }
 
     function updateCustomSplitBalance() {
-      const amount = parseFloat(document.getElementById('amount-input').value) || 0;
+      const amount = parseAmount(document.getElementById('amount-input').value);
       const currency = tripData?.currency || 'MYR';
       let currentTotal = 0;
 
       document.querySelectorAll('[data-custom-split]').forEach(input => {
-        currentTotal += parseFloat(input.value) || 0;
+        currentTotal += parseAmount(input.value);
       });
 
-      const remaining = amount - currentTotal;
+      currentTotal = Math.round(currentTotal * 100) / 100;
+      const remaining = Math.round((amount - currentTotal) * 100) / 100;
       const counterCard = document.getElementById('custom-balance-counter');
       if (!counterCard) return;
 
-      if (Math.abs(remaining) < 0.01) {
+      if (Math.abs(remaining) < 0.005) {
         counterCard.style.background = 'rgba(34, 197, 94, 0.12)';
         counterCard.style.borderColor = 'rgba(34, 197, 94, 0.3)';
         counterCard.innerHTML = `
-          <div style="display:flex; justify-space-between; align-items:center;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
             <span style="font-weight:700; color:#22C55E; font-size:0.85rem;">✓ ${escapeHtml(i18n.t('fullyAllocated') || 'Fully allocated')}</span>
             <span style="font-weight:700; color:var(--text-1); font-size:0.85rem;">${currency} ${currentTotal.toFixed(2)} / ${amount.toFixed(2)}</span>
           </div>
@@ -545,12 +573,14 @@
         return;
       }
 
-      const amount = parseFloat(document.getElementById('amount-input').value) || 0;
+      const amount = parseAmount(document.getElementById('amount-input').value);
       const currency = tripData?.currency || 'MYR';
       const count = members.length || 1;
       
       if (splitType === 'equal') {
-        const perPerson = (amount / count).toFixed(2);
+        const equalSplits = computeEqualSplits(amount, members.map(m => m.id));
+        const uniqueAmounts = Array.from(new Set(Object.values(equalSplits).map(a => a.toFixed(2))));
+        const perPerson = uniqueAmounts.length === 1 ? uniqueAmounts[0] : `${uniqueAmounts[0]} / ${uniqueAmounts[1]}`;
         const text = i18n.t('splitEquallyAmongText', { count, currency, perPerson });
         details.innerHTML = `<div class="text-center p-3 text-muted" style="font-size:0.85rem; background:var(--bg-hover); border-radius:10px; border:1px solid var(--border);">${text}</div>`;
       } else if (splitType === 'custom') {
@@ -574,6 +604,7 @@
           row.style.background = 'var(--bg-hover)';
           row.style.borderRadius = '10px';
           row.style.border = '1px solid var(--border)';
+          const existingVal = (loadedExpenseSplits && loadedExpenseSplits[m.id] !== undefined) ? loadedExpenseSplits[m.id] : '';
           row.innerHTML = `
             <div style="display:flex; align-items:center; gap:8px;">
               <div class="avatar avatar-xs" style="background:${avatarColor(m.id)}">${escapeHtml(getInitials(m.displayName))}</div>
@@ -581,7 +612,7 @@
             </div>
             <div style="display:flex; align-items:center; gap:4px;">
               <span style="font-size:0.8rem; color:var(--text-3);">${currency}</span>
-              <input type="number" class="form-input custom-split-input" style="width:100px; padding:6px 10px; font-size:0.85rem; font-weight:600; text-align:right;" placeholder="0.00" step="0.01" data-custom-split="${m.id}" />
+              <input type="number" class="form-input custom-split-input" style="width:100px; padding:6px 10px; font-size:0.85rem; font-weight:600; text-align:right;" placeholder="0.00" step="0.01" data-custom-split="${m.id}" value="${existingVal}" />
             </div>
           `;
           details.appendChild(row);
@@ -603,12 +634,13 @@
           row.style.background = 'var(--bg-hover)';
           row.style.borderRadius = '10px';
           row.style.border = '1px solid var(--border)';
+          const isChecked = (loadedExpenseSplits) ? (loadedExpenseSplits[m.id] !== undefined) : true;
           row.innerHTML = `
             <div style="display:flex; align-items:center; gap:8px;">
               <div class="avatar avatar-xs" style="background:${avatarColor(m.id)}">${escapeHtml(getInitials(m.displayName))}</div>
               <span style="font-weight:600; font-size:0.88rem; color:var(--text-1);">${escapeHtml(m.displayName)}</span>
             </div>
-            <input type="checkbox" checked data-sel-split="${m.id}" style="width:20px; height:20px; accent-color:var(--coral); cursor:pointer;"/>
+            <input type="checkbox" ${isChecked ? 'checked' : ''} data-sel-split="${m.id}" style="width:20px; height:20px; accent-color:var(--coral); cursor:pointer;"/>
           `;
           details.appendChild(row);
         });
@@ -620,7 +652,7 @@
       const saveBtn = document.getElementById('save-btn');
       if (!saveBtn || saveBtn.disabled) return;
 
-      const amount = parseFloat(document.getElementById('amount-input').value);
+      const amount = parseAmount(document.getElementById('amount-input').value);
       if (!amount || amount <= 0) return showToast('Enter a valid amount');
       
       const title = document.getElementById('title-input').value.trim();
@@ -628,25 +660,24 @@
       const notes = document.getElementById('notes-input').value.trim();
       
       // Compute splits
-      const splits = {};
+      let splits = {};
       if (splitType === 'equal') {
-        const amt = amount / members.length;
-        members.forEach(m => splits[m.id] = amt);
+        splits = computeEqualSplits(amount, members.map(m => m.id));
       } else if (splitType === 'custom') {
         let total = 0;
         document.querySelectorAll('[data-custom-split]').forEach(input => {
-          const val = parseFloat(input.value) || 0;
-          splits[input.dataset.customSplit] = val;
-          total += val;
+          const roundedVal = parseAmount(input.value);
+          splits[input.dataset.customSplit] = roundedVal;
+          total += roundedVal;
         });
-        if (Math.abs(total - amount) > 0.1) {
-          return showToast('Custom amounts must equal total amount');
+        total = Math.round(total * 100) / 100;
+        if (Math.abs(total - amount) > 0.005) {
+          return showToast(i18n.t('errSplitTotal') || 'Split amounts must add up to the total.');
         }
       } else if (splitType === 'selective') {
         const selected = Array.from(document.querySelectorAll('[data-sel-split]:checked')).map(cb => cb.dataset.selSplit);
         if (selected.length === 0) return showToast('Select at least one person');
-        const amt = amount / selected.length;
-        selected.forEach(id => splits[id] = amt);
+        splits = computeSelectiveSplits(amount, selected);
       }
 
       const originalBtnText = saveBtn.textContent;
