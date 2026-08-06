@@ -589,15 +589,18 @@
           roundingSelectorHtml = `
             <div class="rounding-container" style="margin-bottom: 12px; background: var(--bg-hover); padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); width: 100%;">
               <label style="font-size: 0.72rem; color: var(--text-3); font-weight: 700; display: block; margin-bottom: 8px; letter-spacing: 0.5px;">ROUNDING PREFERENCE</label>
-              <div style="display: flex; gap: 8px;">
-                <button type="button" class="btn round-opt-btn ${equalRoundMode === 'exact' ? 'btn-primary' : 'btn-secondary'}" data-round="exact" style="flex: 1; padding: 6px 8px; font-size: 0.78rem; font-weight: 600; height: auto; border-radius: 8px; border: 1px solid var(--border);">
-                  Exact (${currency} ${amount.toFixed(2)})
+              <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
+                <button type="button" class="btn round-opt-btn ${equalRoundMode === 'exact' ? 'btn-primary' : 'btn-secondary'}" data-round="exact" style="width: 100%; padding: 8px 12px; font-size: 0.82rem; font-weight: 600; text-align: left; display: flex; justify-content: space-between; align-items: center; border-radius: 8px; border: 1px solid var(--border); height: auto;">
+                  <span>Exact Split</span>
+                  <span style="opacity: 0.85; font-size: 0.78rem;">adds up to ${currency} ${amount.toFixed(2)}</span>
                 </button>
-                <button type="button" class="btn round-opt-btn ${equalRoundMode === 'down' ? 'btn-primary' : 'btn-secondary'}" data-round="down" style="flex: 1; padding: 6px 8px; font-size: 0.78rem; font-weight: 600; height: auto; border-radius: 8px; border: 1px solid var(--border);">
-                  Down (${floorShare.toFixed(2)} each, Total: ${(floorShare * count).toFixed(2)})
+                <button type="button" class="btn round-opt-btn ${equalRoundMode === 'down' ? 'btn-primary' : 'btn-secondary'}" data-round="down" style="width: 100%; padding: 8px 12px; font-size: 0.82rem; font-weight: 600; text-align: left; display: flex; justify-content: space-between; align-items: center; border-radius: 8px; border: 1px solid var(--border); height: auto;">
+                  <span>Round Down</span>
+                  <span style="opacity: 0.85; font-size: 0.78rem;">${currency} ${floorShare.toFixed(2)} each (Total: ${(floorShare * count).toFixed(2)})</span>
                 </button>
-                <button type="button" class="btn round-opt-btn ${equalRoundMode === 'up' ? 'btn-primary' : 'btn-secondary'}" data-round="up" style="flex: 1; padding: 6px 8px; font-size: 0.78rem; font-weight: 600; height: auto; border-radius: 8px; border: 1px solid var(--border);">
-                  Up (${ceilShare.toFixed(2)} each, Total: ${(ceilShare * count).toFixed(2)})
+                <button type="button" class="btn round-opt-btn ${equalRoundMode === 'up' ? 'btn-primary' : 'btn-secondary'}" data-round="up" style="width: 100%; padding: 8px 12px; font-size: 0.82rem; font-weight: 600; text-align: left; display: flex; justify-content: space-between; align-items: center; border-radius: 8px; border: 1px solid var(--border); height: auto;">
+                  <span>Round Up</span>
+                  <span style="opacity: 0.85; font-size: 0.78rem;">${currency} ${ceilShare.toFixed(2)} each (Total: ${(ceilShare * count).toFixed(2)})</span>
                 </button>
               </div>
             </div>
@@ -659,7 +662,11 @@
 
         updateCustomSplitBalance();
       } else if (splitType === 'selective') {
-        const selected = Array.from(document.querySelectorAll('[data-sel-split]:checked')).map(cb => cb.dataset.selSplit);
+        const selected = [];
+        members.forEach(m => {
+          const isChecked = (loadedExpenseSplits) ? (loadedExpenseSplits[m.id] !== undefined) : true;
+          if (isChecked) selected.push(m.id);
+        });
         const selCount = selected.length || 1;
         const exactShare = amount / selCount;
         const floorShare = Math.floor(exactShare * 100) / 100;
@@ -670,15 +677,18 @@
           roundingSelectorHtml = `
             <div class="rounding-container" style="margin-bottom: 12px; background: var(--bg-hover); padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); width: 100%;">
               <label style="font-size: 0.72rem; color: var(--text-3); font-weight: 700; display: block; margin-bottom: 8px; letter-spacing: 0.5px;">ROUNDING PREFERENCE</label>
-              <div style="display: flex; gap: 8px;">
-                <button type="button" class="btn round-opt-btn ${equalRoundMode === 'exact' ? 'btn-primary' : 'btn-secondary'}" data-round="exact" style="flex: 1; padding: 6px 8px; font-size: 0.78rem; font-weight: 600; height: auto; border-radius: 8px; border: 1px solid var(--border);">
-                  Exact (${currency} ${amount.toFixed(2)})
+              <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
+                <button type="button" class="btn round-opt-btn ${equalRoundMode === 'exact' ? 'btn-primary' : 'btn-secondary'}" data-round="exact" style="width: 100%; padding: 8px 12px; font-size: 0.82rem; font-weight: 600; text-align: left; display: flex; justify-content: space-between; align-items: center; border-radius: 8px; border: 1px solid var(--border); height: auto;">
+                  <span>Exact Split</span>
+                  <span style="opacity: 0.85; font-size: 0.78rem;">adds up to ${currency} ${amount.toFixed(2)}</span>
                 </button>
-                <button type="button" class="btn round-opt-btn ${equalRoundMode === 'down' ? 'btn-primary' : 'btn-secondary'}" data-round="down" style="flex: 1; padding: 6px 8px; font-size: 0.78rem; font-weight: 600; height: auto; border-radius: 8px; border: 1px solid var(--border);">
-                  Down (${floorShare.toFixed(2)} each, Total: ${(floorShare * selCount).toFixed(2)})
+                <button type="button" class="btn round-opt-btn ${equalRoundMode === 'down' ? 'btn-primary' : 'btn-secondary'}" data-round="down" style="width: 100%; padding: 8px 12px; font-size: 0.82rem; font-weight: 600; text-align: left; display: flex; justify-content: space-between; align-items: center; border-radius: 8px; border: 1px solid var(--border); height: auto;">
+                  <span>Round Down</span>
+                  <span style="opacity: 0.85; font-size: 0.78rem;">${currency} ${floorShare.toFixed(2)} each (Total: ${(floorShare * selCount).toFixed(2)})</span>
                 </button>
-                <button type="button" class="btn round-opt-btn ${equalRoundMode === 'up' ? 'btn-primary' : 'btn-secondary'}" data-round="up" style="flex: 1; padding: 6px 8px; font-size: 0.78rem; font-weight: 600; height: auto; border-radius: 8px; border: 1px solid var(--border);">
-                  Up (${ceilShare.toFixed(2)} each, Total: ${(ceilShare * selCount).toFixed(2)})
+                <button type="button" class="btn round-opt-btn ${equalRoundMode === 'up' ? 'btn-primary' : 'btn-secondary'}" data-round="up" style="width: 100%; padding: 8px 12px; font-size: 0.82rem; font-weight: 600; text-align: left; display: flex; justify-content: space-between; align-items: center; border-radius: 8px; border: 1px solid var(--border); height: auto;">
+                  <span>Round Up</span>
+                  <span style="opacity: 0.85; font-size: 0.78rem;">${currency} ${ceilShare.toFixed(2)} each (Total: ${(ceilShare * selCount).toFixed(2)})</span>
                 </button>
               </div>
             </div>
@@ -722,7 +732,12 @@
         // Add event listener to selective checkboxes
         details.querySelectorAll('[data-sel-split]').forEach(cb => {
           cb.addEventListener('change', () => {
-            if (!loadedExpenseSplits) loadedExpenseSplits = {};
+            if (!loadedExpenseSplits) {
+              loadedExpenseSplits = {};
+              members.forEach(m => {
+                loadedExpenseSplits[m.id] = amount / members.length;
+              });
+            }
             if (cb.checked) {
               loadedExpenseSplits[cb.dataset.selSplit] = amount / (details.querySelectorAll('[data-sel-split]:checked').length || 1);
             } else {
