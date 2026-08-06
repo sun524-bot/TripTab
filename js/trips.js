@@ -457,3 +457,173 @@ async function getTripMembers(tripId) {
   return {};
 }
 
+// ================================================================
+//  Trip Import & Export Functionality
+// ================================================================
+
+function convertJSONToTimestamps(obj) {
+  if (obj === null || obj === undefined) return obj;
+  if (typeof obj === 'object') {
+    if (obj.seconds !== undefined && obj.nanoseconds !== undefined) {
+      return new firebase.firestore.Timestamp(obj.seconds, obj.nanoseconds);
+    }
+    for (const key in obj) {
+      if (obj.hasOwnProperty(key)) {
+        obj[key] = convertJSONToTimestamps(obj[key]);
+      }
+    }
+  }
+  return obj;
+}
+
+async function exportTripData(tripId) {
+  if (!tripId) throw new Error('No trip ID provided');
+
+  const tripRef = db.collection('trips').doc(tripId);
+  const tripDoc = await tripRef.get();
+  if (!tripDoc.exists) throw new Error('Trip not found');
+
+  const tripData = tripDoc.data();
+
+  // Fetch expenses
+  const expensesSnap = await tripRef.collection('expenses').get();
+  const expenses = expensesSnap.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data()
+  }));
+
+  // Fetch settlements
+  const settlementsSnap = await tripRef.collection('settlements').get();
+  const settlements = settlementsSnap.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data()
+  }));
+
+  return {
+    version: '1.0',
+    exportedAt: new Date().toISOString(),
+    trip: tripData,
+    expenses: expenses,
+    settlements: settlements
+  };
+}
+
+async function importTripData(exportData, currentUserId, currentUserName, currentUserEmail) {
+  if (!exportData || !exportData.trip) {
+    throw new Error('Invalid export data format.');
+  }
+
+  // Restore timestamps
+  const restoredData = convertJSONToTimestamps(exportData);
+  const origTrip = restoredData.trip;
+  const oldCreator = origTrip.createdBy;
+
+  // 1. Prepare new trip doc
+  const tripRef = db.collection('trips').doc();
+  const tripId = tripRef.id;
+
+  // Build members map
+  const members = { ...origTrip.members };
+  const memberUids = [...(origTrip.memberUids || [])];
+
+  // Map old creator to current user
+  if (oldCreator && oldCreator !== currentUserId) {
+    const oldCreatorData = members[oldCreator] || {};
+    
+    // Remove old creator entry
+    delete members[oldCreator];
+    
+    // Add current user entry as admin
+    members[currentUserId] = {
+      name: currentUserName || oldCreatorData.name || currentUserEmail.split('@')[0] || 'Admin',
+      email: currentUserEmail || oldCreatorData.email || '',
+      role: 'admin',
+      joinedAt: nowTimestamp()
+    };
+
+    // Replace oldCreator with currentUserId in memberUids array
+    const idx = memberUids.indexOf(oldCreator);
+    if (idx !== -1) {
+      memberUids[idx] = currentUserId;
+    } else {
+      memberUids.push(currentUserId);
+    }
+  } else if (!members[currentUserId]) {
+    // If the importing user wasn't the creator but is importing it
+    members[currentUserId] = {
+      name: currentUserName || currentUserEmail.split('@')[0] || 'Admin',
+      email: currentUserEmail,
+      role: 'admin',
+      joinedAt: nowTimestamp()
+    };
+    if (!memberUids.includes(currentUserId)) {
+      memberUids.push(currentUserId);
+    }
+  }
+
+  // Set the new trip details
+  const newTripDoc = {
+    name: origTrip.name || 'Imported Trip',
+    description: origTrip.description || '',
+    startDate: origTrip.startDate || '',
+    endDate: origTrip.endDate || '',
+    currency: origTrip.currency || 'MYR',
+    createdBy: currentUserId,
+    createdAt: nowTimestamp(),
+    status: origTrip.status || 'active',
+    members: members,
+    memberUids: memberUids,
+    pendingInvites: origTrip.pendingInvites || []
+  };
+
+  const batch = db.batch();
+  batch.set(tripRef, newTripDoc);
+
+  // 2. Import expenses
+  const expenses = restoredData.expenses || [];
+  expenses.forEach(exp => {
+    const expRef = tripRef.collection('expenses').doc();
+    const expData = { ...exp };
+    delete expData.id; // remove original doc ID
+
+    // Map old creator UID to new current user UID in paidBy / addedBy / splits
+    if (oldCreator && oldCreator !== currentUserId) {
+      if (expData.paidBy === oldCreator) expData.paidBy = currentUserId;
+      if (expData.addedBy === oldCreator) expData.addedBy = currentUserId;
+      if (expData.splits) {
+        const newSplits = {};
+        Object.entries(expData.splits).forEach(([uid, val]) => {
+          if (uid === oldCreator) {
+            newSplits[currentUserId] = val;
+          } else {
+            newSplits[uid] = val;
+          }
+        });
+        expData.splits = newSplits;
+      }
+    }
+
+    batch.set(expRef, expData);
+  });
+
+  // 3. Import settlements
+  const settlements = restoredData.settlements || [];
+  settlements.forEach(setl => {
+    const setlRef = tripRef.collection('settlements').doc();
+    const setlData = { ...setl };
+    delete setlData.id; // remove original doc ID
+
+    // Map old creator UID to new current user UID in from / to
+    if (oldCreator && oldCreator !== currentUserId) {
+      if (setlData.from === oldCreator) setlData.from = currentUserId;
+      if (setlData.to === oldCreator) setlData.to = currentUserId;
+    }
+
+    batch.set(setlRef, setlData);
+  });
+
+  await batch.commit();
+  return tripId;
+}
+
+

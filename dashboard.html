@@ -24,7 +24,7 @@
     <script src="js/i18n.js"></script>
     <script src="js/utils.js"></script>
     <script src="js/auth.js"></script>
-    <script src="js/trips.js?v=3"></script>
+    <script src="js/trips.js?v=4"></script>
     <script src="js/expenses.js"></script>
     <style>
         .hidden { display: none !important; }
@@ -55,9 +55,15 @@
                     <h1 id="user-greeting" style="color:#fff; font-size:1.35rem; font-weight:700; margin:0 0 4px 0;">Good afternoon, 👋</h1>
                     <div id="active-trips-count" style="color:rgba(255,255,255,0.85); font-size:0.85rem; font-weight:500;">0 active trips</div>
                 </div>
-                <button class="btn" onclick="openCreateTripModal()" data-i18n="createTripBtn" style="background:#fff; color:var(--coral); font-weight:700; font-size:0.85rem; padding:8px 16px; border-radius:20px; border:none; box-shadow:0 4px 12px rgba(0,0,0,0.15); cursor:pointer;">
-                    + Create
-                </button>
+                <div class="flex-row gap-2" style="display:flex; gap:8px;">
+                    <button class="btn" onclick="openCreateTripModal()" data-i18n="createTripBtn" style="background:#fff; color:var(--coral); font-weight:700; font-size:0.85rem; padding:8px 16px; border-radius:20px; border:none; box-shadow:0 4px 12px rgba(0,0,0,0.15); cursor:pointer;">
+                        + Create
+                    </button>
+                    <button class="btn" onclick="triggerImportJSON()" data-i18n="importTrip" style="background:rgba(255,255,255,0.22); color:#fff; font-weight:700; font-size:0.85rem; padding:8px 16px; border-radius:20px; border:1px solid rgba(255,255,255,0.4); cursor:pointer; display:flex; align-items:center; gap:4px;">
+                        📥 Import
+                    </button>
+                    <input type="file" id="import-json-input" style="display:none;" accept=".json" onchange="handleImportJSON(event)">
+                </div>
             </div>
         </header>
 
@@ -325,6 +331,39 @@
                 btn.innerHTML = `<span data-i18n="createTripAction">${i18n.t('createTripAction')}</span>`;
             }
         });
+
+        function triggerImportJSON() {
+            document.getElementById('import-json-input').click();
+        }
+
+        async function handleImportJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // Reset input
+            event.target.value = '';
+
+            try {
+                const text = await file.text();
+                const data = JSON.parse(text);
+
+                if (!data || !data.trip) {
+                    showToast(i18n.t('invalidJSON'), 'error');
+                    return;
+                }
+
+                const displayName = currentUser.displayName || currentUser.email.split('@')[0];
+                const newTripId = await importTripData(data, currentUser.uid, displayName, currentUser.email);
+                
+                showToast(i18n.t('importSuccess'), 'success');
+                setTimeout(() => {
+                    window.location.href = `trip.html?id=${newTripId}`;
+                }, 1000);
+            } catch (err) {
+                console.error('Import failed:', err);
+                showToast(i18n.t('importFailed') + ': ' + (err.message || err), 'error');
+            }
+        }
 
         if (typeof theme !== 'undefined' && theme.init) theme.init();
         if (typeof i18n !== 'undefined' && i18n.init) i18n.init();

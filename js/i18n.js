@@ -141,6 +141,12 @@ const TRANSLATIONS = {
     owes: 'Owes',
     exportSummary: 'Export Summary',
     printSummary: 'Print / Save PDF',
+    exportJSON: 'Export JSON Backup',
+    exportCSV: 'Export Expenses (CSV)',
+    importTrip: 'Import Trip',
+    importSuccess: 'Trip imported successfully!',
+    importFailed: 'Failed to import trip.',
+    invalidJSON: 'Invalid backup file.',
 
     // Profile
     editProfile: 'Edit Profile',
@@ -424,6 +430,12 @@ const TRANSLATIONS = {
     owes: '欠款',
     exportSummary: '导出摘要',
     printSummary: '打印 / 保存 PDF',
+    exportJSON: '导出 JSON 备份',
+    exportCSV: '导出费用明细 (CSV)',
+    importTrip: '导入旅行',
+    importSuccess: '旅行导入成功！',
+    importFailed: '导入旅行失败。',
+    invalidJSON: '无效的备份文件。',
 
     // Profile
     editProfile: '编辑资料',
