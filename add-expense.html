@@ -257,6 +257,7 @@
     let selectedReceiptFiles = [];
     let existingReceiptUrls = [];
     let loadedExpenseSplits = null;
+    let equalRoundMode = 'exact';
     
     const categories = [
       { id: 'food', icon: '🍔', key: 'catFood' },
@@ -380,6 +381,7 @@
             
             // Auto-detect splitType if splits exist
             if (loadedExpenseSplits) {
+              equalRoundMode = exp.equalRoundMode || 'exact';
               const uids = Object.keys(loadedExpenseSplits);
               const values = Object.values(loadedExpenseSplits).map(Number);
               const uniqueValues = new Set(values);
@@ -578,11 +580,44 @@
       const count = members.length || 1;
       
       if (splitType === 'equal') {
-        const equalSplits = computeEqualSplits(amount, members.map(m => m.id));
-        const uniqueAmounts = Array.from(new Set(Object.values(equalSplits).map(a => a.toFixed(2))));
-        const perPerson = uniqueAmounts.length === 1 ? uniqueAmounts[0] : `${uniqueAmounts[0]} / ${uniqueAmounts[1]}`;
+        const exactShare = amount / count;
+        const floorShare = Math.floor(exactShare * 100) / 100;
+        const ceilShare = Math.ceil(exactShare * 100) / 100;
+        
+        let roundingSelectorHtml = '';
+        if (floorShare !== ceilShare && count > 0) {
+          roundingSelectorHtml = `
+            <div class="rounding-container" style="margin-bottom: 12px; background: var(--bg-hover); padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); width: 100%;">
+              <label style="font-size: 0.72rem; color: var(--text-3); font-weight: 700; display: block; margin-bottom: 8px; letter-spacing: 0.5px;">ROUNDING PREFERENCE</label>
+              <div style="display: flex; gap: 8px;">
+                <button type="button" class="btn round-opt-btn ${equalRoundMode === 'exact' ? 'btn-primary' : 'btn-secondary'}" data-round="exact" style="flex: 1; padding: 6px 8px; font-size: 0.78rem; font-weight: 600; height: auto; border-radius: 8px; border: 1px solid var(--border);">
+                  Exact (${currency} ${amount.toFixed(2)})
+                </button>
+                <button type="button" class="btn round-opt-btn ${equalRoundMode === 'down' ? 'btn-primary' : 'btn-secondary'}" data-round="down" style="flex: 1; padding: 6px 8px; font-size: 0.78rem; font-weight: 600; height: auto; border-radius: 8px; border: 1px solid var(--border);">
+                  Down (${floorShare.toFixed(2)} each, Total: ${(floorShare * count).toFixed(2)})
+                </button>
+                <button type="button" class="btn round-opt-btn ${equalRoundMode === 'up' ? 'btn-primary' : 'btn-secondary'}" data-round="up" style="flex: 1; padding: 6px 8px; font-size: 0.78rem; font-weight: 600; height: auto; border-radius: 8px; border: 1px solid var(--border);">
+                  Up (${ceilShare.toFixed(2)} each, Total: ${(ceilShare * count).toFixed(2)})
+                </button>
+              </div>
+            </div>
+          `;
+        }
+        
+        const perPerson = (amount / count).toFixed(2);
         const text = i18n.t('splitEquallyAmongText', { count, currency, perPerson });
-        details.innerHTML = `<div class="text-center p-3 text-muted" style="font-size:0.85rem; background:var(--bg-hover); border-radius:10px; border:1px solid var(--border);">${text}</div>`;
+        details.innerHTML = `
+          ${roundingSelectorHtml}
+          <div class="text-center p-3 text-muted" style="font-size:0.85rem; background:var(--bg-hover); border-radius:10px; border:1px solid var(--border); width: 100%;">${text}</div>
+        `;
+        
+        // Add event listeners to equal round buttons
+        details.querySelectorAll('.round-opt-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            equalRoundMode = e.currentTarget.dataset.round;
+            renderSplitDetails();
+          });
+        });
       } else if (splitType === 'custom') {
         const counterCard = document.createElement('div');
         counterCard.id = 'custom-balance-counter';
@@ -624,6 +659,37 @@
 
         updateCustomSplitBalance();
       } else if (splitType === 'selective') {
+        const selected = Array.from(document.querySelectorAll('[data-sel-split]:checked')).map(cb => cb.dataset.selSplit);
+        const selCount = selected.length || 1;
+        const exactShare = amount / selCount;
+        const floorShare = Math.floor(exactShare * 100) / 100;
+        const ceilShare = Math.ceil(exactShare * 100) / 100;
+
+        let roundingSelectorHtml = '';
+        if (floorShare !== ceilShare && selected.length > 0) {
+          roundingSelectorHtml = `
+            <div class="rounding-container" style="margin-bottom: 12px; background: var(--bg-hover); padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); width: 100%;">
+              <label style="font-size: 0.72rem; color: var(--text-3); font-weight: 700; display: block; margin-bottom: 8px; letter-spacing: 0.5px;">ROUNDING PREFERENCE</label>
+              <div style="display: flex; gap: 8px;">
+                <button type="button" class="btn round-opt-btn ${equalRoundMode === 'exact' ? 'btn-primary' : 'btn-secondary'}" data-round="exact" style="flex: 1; padding: 6px 8px; font-size: 0.78rem; font-weight: 600; height: auto; border-radius: 8px; border: 1px solid var(--border);">
+                  Exact (${currency} ${amount.toFixed(2)})
+                </button>
+                <button type="button" class="btn round-opt-btn ${equalRoundMode === 'down' ? 'btn-primary' : 'btn-secondary'}" data-round="down" style="flex: 1; padding: 6px 8px; font-size: 0.78rem; font-weight: 600; height: auto; border-radius: 8px; border: 1px solid var(--border);">
+                  Down (${floorShare.toFixed(2)} each, Total: ${(floorShare * selCount).toFixed(2)})
+                </button>
+                <button type="button" class="btn round-opt-btn ${equalRoundMode === 'up' ? 'btn-primary' : 'btn-secondary'}" data-round="up" style="flex: 1; padding: 6px 8px; font-size: 0.78rem; font-weight: 600; height: auto; border-radius: 8px; border: 1px solid var(--border);">
+                  Up (${ceilShare.toFixed(2)} each, Total: ${(ceilShare * selCount).toFixed(2)})
+                </button>
+              </div>
+            </div>
+          `;
+        }
+
+        const container = document.createElement('div');
+        container.style.width = '100%';
+        container.innerHTML = roundingSelectorHtml;
+        details.appendChild(container);
+
         members.forEach(m => {
           const row = document.createElement('div');
           row.style.display = 'flex';
@@ -644,6 +710,27 @@
           `;
           details.appendChild(row);
         });
+
+        // Add event listeners to selective round buttons
+        details.querySelectorAll('.round-opt-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            equalRoundMode = e.currentTarget.dataset.round;
+            renderSplitDetails();
+          });
+        });
+
+        // Add event listener to selective checkboxes
+        details.querySelectorAll('[data-sel-split]').forEach(cb => {
+          cb.addEventListener('change', () => {
+            if (!loadedExpenseSplits) loadedExpenseSplits = {};
+            if (cb.checked) {
+              loadedExpenseSplits[cb.dataset.selSplit] = amount / (details.querySelectorAll('[data-sel-split]:checked').length || 1);
+            } else {
+              delete loadedExpenseSplits[cb.dataset.selSplit];
+            }
+            renderSplitDetails();
+          });
+        });
       }
     }
 
@@ -661,12 +748,25 @@
       
       // Compute splits
       let splits = {};
+      let calculationAmount = amount;
+
       if (splitType === 'equal') {
-        splits = computeEqualSplits(amount, members.map(m => m.id));
+        if (equalRoundMode === 'exact') {
+          splits = computeEqualSplits(amount, members.map(m => m.id));
+        } else if (equalRoundMode === 'down') {
+          const share = Math.floor((amount / members.length) * 100) / 100;
+          members.forEach(m => splits[m.id] = share);
+          calculationAmount = Math.round(share * members.length * 100) / 100;
+        } else if (equalRoundMode === 'up') {
+          const share = Math.ceil((amount / members.length) * 100) / 100;
+          members.forEach(m => splits[m.id] = share);
+          calculationAmount = Math.round(share * members.length * 100) / 100;
+        }
       } else if (splitType === 'custom') {
         let total = 0;
         document.querySelectorAll('[data-custom-split]').forEach(input => {
-          const roundedVal = parseAmount(input.value);
+          const val = parseFloat(input.value) || 0;
+          const roundedVal = Math.round(val * 100) / 100;
           splits[input.dataset.customSplit] = roundedVal;
           total += roundedVal;
         });
@@ -677,7 +777,18 @@
       } else if (splitType === 'selective') {
         const selected = Array.from(document.querySelectorAll('[data-sel-split]:checked')).map(cb => cb.dataset.selSplit);
         if (selected.length === 0) return showToast('Select at least one person');
-        splits = computeSelectiveSplits(amount, selected);
+        
+        if (equalRoundMode === 'exact') {
+          splits = computeSelectiveSplits(amount, selected);
+        } else if (equalRoundMode === 'down') {
+          const share = Math.floor((amount / selected.length) * 100) / 100;
+          selected.forEach(id => splits[id] = share);
+          calculationAmount = Math.round(share * selected.length * 100) / 100;
+        } else if (equalRoundMode === 'up') {
+          const share = Math.ceil((amount / selected.length) * 100) / 100;
+          selected.forEach(id => splits[id] = share);
+          calculationAmount = Math.round(share * selected.length * 100) / 100;
+        }
       }
 
       const originalBtnText = saveBtn.textContent;
@@ -700,6 +811,8 @@
       const expenseData = {
         title,
         amount,
+        calculationAmount: calculationAmount !== undefined ? calculationAmount : amount,
+        equalRoundMode: (splitType === 'equal' || splitType === 'selective') ? equalRoundMode : null,
         date,
         category: selectedCategory,
         paidBy: selectedPayer,

@@ -65,6 +65,7 @@ async function getExpense(tripId, expenseId) {
 }
 
 function computeEqualSplits(amount, memberUids) {
+  amount = Math.round((Number(amount) || 0) * 100) / 100;
   const count = memberUids.length;
   if (count === 0) return {};
   
@@ -90,7 +91,7 @@ function getUserBalance(uid, expenses) {
   
   expenses.forEach(exp => {
     if (exp.paidBy === uid) {
-      paid += Number(exp.amount) || 0;
+      paid += Number(exp.calculationAmount || exp.amount) || 0;
     }
     if (exp.splits && exp.splits[uid]) {
       owed += Number(exp.splits[uid]) || 0;
@@ -156,7 +157,7 @@ function getMemberIndividualBreakdown(uid, expenses) {
     const myShare = (exp.splits && exp.splits[uid] != null) ? Number(exp.splits[uid]) : 0;
 
     if (isPayer) {
-      paidUpfront += Number(exp.amount) || 0;
+      paidUpfront += Number(exp.calculationAmount || exp.amount) || 0;
     }
 
     if (myShare > 0 || isPayer) {

@@ -236,9 +236,9 @@ function calculateSettlements(members, expenses) {
 
   expenses.forEach(exp => {
     if (!exp.splits || exp.status === 'deleted') return;
-    // Payer gets credit for full amount
+    // Payer gets credit for full amount (respecting rounded calculationAmount if set)
     if (balances[exp.paidBy] !== undefined) {
-      balances[exp.paidBy] += parseAmount(exp.amount);
+      balances[exp.paidBy] += parseAmount(exp.calculationAmount || exp.amount);
     }
     // Each participant debited their share
     Object.entries(exp.splits).forEach(([uid, share]) => {
