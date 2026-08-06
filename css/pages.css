@@ -305,6 +305,10 @@
   flex-direction: column;
   gap: var(--sp-5);
 }
+.add-expense-form .container {
+  max-width: 100%;
+  padding: 0;
+}
 .amount-hero {
   background: var(--gradient-soft);
   border: 1.5px solid var(--glass-border);
@@ -535,7 +539,12 @@
    RESPONSIVE ADJUSTMENTS
 ---------------------------------------------------------------- */
 @media (min-width: 640px) {
-  .add-expense-form { max-width: 500px; margin: 0 auto; }
+  .add-expense-form {
+    max-width: 800px;
+    margin: 0 auto;
+    width: 100%;
+    padding: var(--sp-6) var(--sp-6) 100px;
+  }
   .auth-card { border-radius: var(--r-2xl); margin: var(--sp-6) auto; max-width: 440px; }
   .auth-hero { border-radius: 0 0 var(--r-2xl) var(--r-2xl); }
   .profile-hero { border-radius: 0; }
@@ -550,5 +559,15 @@
     border-radius: var(--r-xl) var(--r-xl) 0 0;
     border-left: 1px solid var(--border);
     border-right: 1px solid var(--border);
+  }
+  .category-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .add-expense-form {
+    max-width: 960px;
+    padding: var(--sp-6) var(--sp-8) 100px;
   }
 }
