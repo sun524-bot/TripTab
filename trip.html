@@ -676,6 +676,19 @@
         const memberMap = currentTrip.members || {};
         const memberUids = currentTrip.memberUids || [];
 
+        // Sync current user's name in trip members if it is out of date (fail-safe)
+        if (user && memberMap[user.uid]) {
+          const expectedName = user.displayName || 'Member';
+          if (memberMap[user.uid].name !== expectedName) {
+            console.log(`[Sync] Updating user name in trip members from "${memberMap[user.uid].name}" to "${expectedName}"`);
+            db.collection('trips').doc(tripId).update({
+              [`members.${user.uid}.name`]: expectedName
+            }).catch(err => {
+              console.warn('[Sync] Failed to sync user name in trip members:', err);
+            });
+          }
+        }
+
         // --- Access control: redirect non-members ---
         const isMember = memberUids.includes(user.uid);
         if (!isMember) {

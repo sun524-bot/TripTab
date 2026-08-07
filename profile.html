@@ -221,11 +221,30 @@
       
       try {
         await currentUser.updateProfile({ displayName: newName });
-        await db.collection('users').doc(currentUser.uid).update({ displayName: newName });
+        // Sync name to Firestore users collection (use name instead of displayName, merge: true)
+        await db.collection('users').doc(currentUser.uid).set({ name: newName }, { merge: true });
+        
+        // Sync name to all existing trips where user is a member
+        try {
+          const tripsSnap = await db.collection('trips').where('memberUids', 'array-contains', currentUser.uid).get();
+          if (!tripsSnap.empty) {
+            const batch = db.batch();
+            tripsSnap.forEach(doc => {
+              batch.update(doc.ref, {
+                [`members.${currentUser.uid}.name`]: newName
+              });
+            });
+            await batch.commit();
+          }
+        } catch (tripErr) {
+          console.warn('[Profile] Failed to sync name to existing trips:', tripErr);
+        }
+
         showToast('Profile updated');
         loadProfile(currentUser);
         closeEditName();
       } catch (e) {
+        console.error('Error updating profile:', e);
         showToast('Error updating profile', 'error');
       } finally {
         btn.disabled = false;
