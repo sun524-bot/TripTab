@@ -1925,7 +1925,8 @@
     function buildPrintBreakdown() {
       const container = document.getElementById('print-breakdown-section');
       if (!container) return;
-      container.innerHTML = `<h3 style="font-size:1.1rem;font-weight:700;margin-bottom:1rem;border-bottom:2px solid #333;padding-bottom:0.5rem;color:#000;">Calculation Breakdown Report</h3>`;
+      const lang = i18n.lang;
+      container.innerHTML = `<h3 style="font-size:1.1rem;font-weight:700;margin-bottom:1rem;border-bottom:2px solid #333;padding-bottom:0.5rem;color:#000;">${escapeHtml(i18n.t('printReportTitle'))}</h3>`;
 
       const uids = Object.keys(tripMembers || {});
       const currency = currentTrip?.currency || 'MYR';
@@ -1978,20 +1979,43 @@
           const card = document.createElement('div');
           card.className = 'print-breakdown-card';
 
-          let listItems1 = expU2ForU1.map(e => `<li>${escapeHtml(e.title)} (${escapeHtml(formatDate(e.date))}) - Total ${escapeHtml(formatCurrency(e.total, currency))} ➔ <strong>+${escapeHtml(formatCurrency(e.share, currency))}</strong></li>`).join('');
-          let listItems2 = expU1ForU2.map(e => `<li>${escapeHtml(e.title)} (${escapeHtml(formatDate(e.date))}) - Total ${escapeHtml(formatCurrency(e.total, currency))} ➔ <strong>-${escapeHtml(formatCurrency(e.share, currency))}</strong></li>`).join('');
+          // Build list items (Total label is shared)
+          const totalLbl = escapeHtml(i18n.t('totalLabel'));
+          let listItems1 = expU2ForU1.map(e => `<li>${escapeHtml(e.title)} (${escapeHtml(formatDate(e.date))}) - ${totalLbl} ${escapeHtml(formatCurrency(e.total, currency))} ➔ <strong>+${escapeHtml(formatCurrency(e.share, currency))}</strong></li>`).join('');
+          let listItems2 = expU1ForU2.map(e => `<li>${escapeHtml(e.title)} (${escapeHtml(formatDate(e.date))}) - ${totalLbl} ${escapeHtml(formatCurrency(e.total, currency))} ➔ <strong>-${escapeHtml(formatCurrency(e.share, currency))}</strong></li>`).join('');
+
+          // Language-aware sentence construction
+          const headLine = lang === 'zh'
+            ? `${escapeHtml(debtorName)} ${escapeHtml(i18n.t('printPays'))} ${escapeHtml(creditorName)}：${escapeHtml(formatCurrency(netAbs, currency))}`
+            : `${escapeHtml(debtorName)} ${escapeHtml(i18n.t('printPays'))} ${escapeHtml(creditorName)}: ${escapeHtml(formatCurrency(netAbs, currency))}`;
+
+          const line1 = lang === 'zh'
+            ? `${escapeHtml(n2)} ${escapeHtml(i18n.t('printPaidFor'))} ${escapeHtml(n1)} ${escapeHtml(i18n.t('printPaidFor2'))}：<strong>+${escapeHtml(formatCurrency(paidU2ForU1, currency))}</strong>`
+            : `${escapeHtml(n2)} ${escapeHtml(i18n.t('printPaidFor'))} ${escapeHtml(n1)}: <strong>+${escapeHtml(formatCurrency(paidU2ForU1, currency))}</strong>`;
+
+          const line2 = lang === 'zh'
+            ? `${escapeHtml(i18n.t('printDeduct'))} ${escapeHtml(n1)} ${escapeHtml(i18n.t('printPaidFor'))} ${escapeHtml(n2)} ${escapeHtml(i18n.t('printPaidFor2'))}：<strong>-${escapeHtml(formatCurrency(paidU1ForU2, currency))}</strong>`
+            : `${escapeHtml(i18n.t('printDeduct'))} ${escapeHtml(n1)} ${escapeHtml(i18n.t('printPaidFor'))} ${escapeHtml(n2)}: <strong>-${escapeHtml(formatCurrency(paidU1ForU2, currency))}</strong>`;
+
+          const line3 = `<strong>${escapeHtml(i18n.t('printDirectPairwiseNet'))} ${escapeHtml(formatCurrency(netAbs, currency))}</strong>`;
+
+          const sec1Label = lang === 'zh'
+            ? `${escapeHtml(i18n.t('printExpensesPaidBy'))} ${escapeHtml(n2)} ${escapeHtml(i18n.t('printExpensesPaidBy2'))}（${escapeHtml(n1)}${escapeHtml(i18n.t('printShareLabel'))}）：`
+            : `${escapeHtml(i18n.t('printExpensesPaidBy'))} ${escapeHtml(n2)} (${escapeHtml(n1)}${escapeHtml(i18n.t('printShareLabel'))}):`
+
+          const sec2Label = lang === 'zh'
+            ? `${escapeHtml(i18n.t('printExpensesPaidBy'))} ${escapeHtml(n1)} ${escapeHtml(i18n.t('printExpensesPaidBy2'))}（${escapeHtml(n2)}${escapeHtml(i18n.t('printShareLabel'))}）：`
+            : `${escapeHtml(i18n.t('printExpensesPaidBy'))} ${escapeHtml(n1)} (${escapeHtml(n2)}${escapeHtml(i18n.t('printShareLabel'))}):`
 
           card.innerHTML = `
-            <div style="font-weight:700;font-size:1rem;margin-bottom:0.4rem;color:#000;">
-              ${escapeHtml(debtorName)} pays ${escapeHtml(creditorName)}: ${escapeHtml(formatCurrency(netAbs, currency))}
-            </div>
+            <div style="font-weight:700;font-size:1rem;margin-bottom:0.4rem;color:#000;">${headLine}</div>
             <div style="font-size:0.85rem;margin-bottom:0.5rem;line-height:1.5;color:#333;">
-              <div>• ${escapeHtml(n2)} paid for ${escapeHtml(n1)}: <strong>+${escapeHtml(formatCurrency(paidU2ForU1, currency))}</strong></div>
-              <div>• Deduct ${escapeHtml(n1)} paid for ${escapeHtml(n2)}: <strong>-${escapeHtml(formatCurrency(paidU1ForU2, currency))}</strong></div>
-              <div>• <strong>Direct Pairwise Net: ${escapeHtml(formatCurrency(netAbs, currency))}</strong></div>
+              <div>• ${line1}</div>
+              <div>• ${line2}</div>
+              <div>• ${line3}</div>
             </div>
-            ${expU2ForU1.length > 0 ? `<div style="font-size:0.8rem;margin-top:0.4rem;color:#000;"><strong>Expenses paid by ${escapeHtml(n2)} (${escapeHtml(n1)}'s share):</strong><ul style="margin:0.2rem 0 0.4rem 1.2rem;padding:0;">${listItems1}</ul></div>` : ''}
-            ${expU1ForU2.length > 0 ? `<div style="font-size:0.8rem;margin-top:0.4rem;color:#000;"><strong>Expenses paid by ${escapeHtml(n1)} (${escapeHtml(n2)}'s share):</strong><ul style="margin:0.2rem 0 0.4rem 1.2rem;padding:0;">${listItems2}</ul></div>` : ''}
+            ${expU2ForU1.length > 0 ? `<div style="font-size:0.8rem;margin-top:0.4rem;color:#000;"><strong>${sec1Label}</strong><ul style="margin:0.2rem 0 0.4rem 1.2rem;padding:0;">${listItems1}</ul></div>` : ''}
+            ${expU1ForU2.length > 0 ? `<div style="font-size:0.8rem;margin-top:0.4rem;color:#000;"><strong>${sec2Label}</strong><ul style="margin:0.2rem 0 0.4rem 1.2rem;padding:0;">${listItems2}</ul></div>` : ''}
           `;
           container.appendChild(card);
         }
