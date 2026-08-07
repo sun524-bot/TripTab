@@ -1,3 +1,5 @@
+🇨🇳 [中文版 README](README_ZH.md)
+
 # ✈️ TripTab — Travel Expense Sharing App
 
 **TripTab** is a modern, responsive Progressive Web Application (PWA) designed to make splitting travel expenses and group debts effortless, transparent, and beautifully organized.
