@@ -16,6 +16,7 @@
   - Equal split among all members
   - Custom individual split amounts
   - Selective member participation
+  - **Show Split Details Toggle**: A quick switch in the expense list to dynamically expand cards and show individual member share chips inline (persisted via `localStorage`).
 - ⚡ **Smart Debt Simplification**:
   - **Direct Pairwise Mode**: Shows exact itemized debts between any two members.
   - **Group Debt Simplification**: Greedy algorithm that minimizes total transfer steps across the entire group.
