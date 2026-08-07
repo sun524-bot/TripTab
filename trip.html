@@ -1736,9 +1736,19 @@
 
         // Section 1: Expenses paid by TO (Y)
         const sec1 = document.createElement('div');
-        sec1.innerHTML = `<h5 style="margin: 4px 0 8px 0; font-size: 0.85rem; font-weight: 700; color: var(--text-1);">💳 ${escapeHtml(toName)} ${escapeHtml(i18n.t('calcPaidFor'))} ${escapeHtml(fromName)} (${escapeHtml(fromName)}${escapeHtml(i18n.t('calcShareLabel'))}):</h5>`;
+        {
+          const lang = i18n.lang;
+          const sec1Title = lang === 'zh'
+            ? `💳 ${escapeHtml(toName)} ${escapeHtml(i18n.t('calcPaidBySection'))} ${escapeHtml(fromName)}（${escapeHtml(fromName)}${escapeHtml(i18n.t('calcShareLabel'))}）：`
+            : `💳 ${escapeHtml(toName)} ${escapeHtml(i18n.t('calcPaidBySection'))} ${escapeHtml(fromName)} (${escapeHtml(fromName)}${escapeHtml(i18n.t('calcShareLabel'))}):`;
+          sec1.innerHTML = `<h5 style="margin: 4px 0 8px 0; font-size: 0.85rem; font-weight: 700; color: var(--text-1);">${sec1Title}</h5>`;
+        }
         if (expensesPaidByToForFrom.length === 0) {
-          sec1.innerHTML += `<div class="text-muted p-2" style="font-size: 0.8rem; background: var(--bg-body); border-radius: 8px;">${escapeHtml(i18n.t('calcNoDirectExpenses'))} ${escapeHtml(toName)} ${escapeHtml(i18n.t('calcNoDirectExpenses2'))} ${escapeHtml(fromName)}.</div>`;
+          const lang = i18n.lang;
+          const emptyMsg = lang === 'zh'
+            ? `${escapeHtml(toName)}${escapeHtml(i18n.t('calcNoDirectExpenses2'))} ${escapeHtml(fromName)} ${escapeHtml(i18n.t('calcNoOffsetExpenses2'))}`
+            : `${escapeHtml(i18n.t('calcNoDirectExpenses'))} ${escapeHtml(toName)} ${escapeHtml(i18n.t('calcNoDirectExpenses2'))} ${escapeHtml(fromName)}.`;
+          sec1.innerHTML += `<div class="text-muted p-2" style="font-size: 0.8rem; background: var(--bg-body); border-radius: 8px;">${emptyMsg}</div>`;
         } else {
           expensesPaidByToForFrom.forEach(item => {
             sec1.innerHTML += `
@@ -1756,9 +1766,19 @@
 
         // Section 2: Expenses paid by FROM (X)
         const sec2 = document.createElement('div');
-        sec2.innerHTML = `<h5 style="margin: 12px 0 8px 0; font-size: 0.85rem; font-weight: 700; color: var(--text-1);">🔄 ${escapeHtml(i18n.t('calcDeductSection'))} ${escapeHtml(fromName)} (${escapeHtml(toName)}${escapeHtml(i18n.t('calcShareLabel'))}):</h5>`;
+        {
+          const lang = i18n.lang;
+          const sec2Title = lang === 'zh'
+            ? `🔄 ${escapeHtml(i18n.t('calcDeductSection'))} ${escapeHtml(fromName)} ${escapeHtml(i18n.t('calcPaidBySection'))}（${escapeHtml(toName)}${escapeHtml(i18n.t('calcShareLabel'))}）：`
+            : `🔄 ${escapeHtml(i18n.t('calcDeductSection'))} ${escapeHtml(fromName)} (${escapeHtml(toName)}${escapeHtml(i18n.t('calcShareLabel'))}):`;
+          sec2.innerHTML = `<h5 style="margin: 12px 0 8px 0; font-size: 0.85rem; font-weight: 700; color: var(--text-1);">${sec2Title}</h5>`;
+        }
         if (expensesPaidByFromForTo.length === 0) {
-          sec2.innerHTML += `<div class="text-muted p-2" style="font-size: 0.8rem; background: var(--bg-body); border-radius: 8px;">${escapeHtml(i18n.t('calcNoOffsetExpenses'))} ${escapeHtml(fromName)} ${escapeHtml(i18n.t('calcNoDirectExpenses2'))} ${escapeHtml(toName)}.</div>`;
+          const lang = i18n.lang;
+          const emptyMsg2 = lang === 'zh'
+            ? `${escapeHtml(fromName)}${escapeHtml(i18n.t('calcNoDirectExpenses2'))} ${escapeHtml(toName)} ${escapeHtml(i18n.t('calcNoOffsetExpenses2'))}`
+            : `${escapeHtml(i18n.t('calcNoOffsetExpenses'))} ${escapeHtml(fromName)} ${escapeHtml(i18n.t('calcNoDirectExpenses2'))} ${escapeHtml(toName)}.`;
+          sec2.innerHTML += `<div class="text-muted p-2" style="font-size: 0.8rem; background: var(--bg-body); border-radius: 8px;">${emptyMsg2}</div>`;
         } else {
           expensesPaidByFromForTo.forEach(item => {
             sec2.innerHTML += `
